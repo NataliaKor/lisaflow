@@ -1,0 +1,67 @@
+# Set of parameters:
+#  for creating data with GPU based GB model based of FastGB. Data will be created on the fly.
+#  Provide:
+#          - default parameters
+#          - parameter ranges
+#          - specify which parameters vary
+
+tvec:
+    dt:      15.0         # Cadence
+    Tobs:    31536000.0
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, 
+                           # or if we fix them to some initial value: 0 -- fixed, 1 -- vary
+    amp:      1
+    f0:       1
+    fdot:     1
+    fddot:    0
+    phi0:     1
+    iota:     1
+    psi:      1
+    lam:      1
+    beta:     1
+
+default:                   # Default values for the parameters of the model
+
+    amp:      -22.3437 #4.532e-23        # amplitude
+    f0:       0.0100680913     # initial frequency
+    fdot:     -14.747 #1.79e-15         # frequency derivative 
+    fddot:    0.0              # second derivative of the frequency
+    phi0:     5.48             # initial phase
+    iota:     0.67             # inclination
+    psi:      0.43             # polarisation angle
+    lam:      4.36             # ecliptic longitude 
+    beta:     -0.61 # 2.18          # ecliptic latitude
+
+limits:
+
+    min:
+      fvec:     0.010053 #0.01005481887366819
+      amp:      -24.        
+      f0:       0.010062 #0.010063         
+      fdot:     -17. # -16.
+      fddot:    0.0            
+      phi0:     0.0       
+      iota:     0.0        
+      psi:      0.0        
+      lam:      0.0          
+      beta:     -0.5          # Prior should be in sin or in cos??? 
+      #beta_cos: -1.0 
+      beta_sin: -1.0
+      iota_cos: -1.0
+
+    max:
+      fvec:      0.010094 #0.01008218112633181 
+      amp:       -20.        
+      f0:        0.010085 # 0.010074
+      fdot:      -14.
+      fddot:     0.0            
+      phi0:      2.0         # TODO do not forget to add pi           
+      iota:      1.0         # TODO do not forget to add pi           
+      psi:       1.0         # TODO do not forget to add pi  
+      lam:       2.0         # TODO do not forget to add pi 
+      beta:      0.5         # TODO do not forget to add pi  
+      # beta_cos:  1.0 
+      beta_sin:  1.0
+      iota_cos:  1.0
+

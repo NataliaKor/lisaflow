@@ -1,0 +1,114 @@
+# Set of parameters:
+# for creating data with GPU based MBHB model. Data will be created on the fly.
+# Provide:
+#         - default parameters
+#         - parameter ranges
+#         - specify which parameters vary
+
+tvec:
+    dt:      10.0         # Cadence
+
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, 
+                           # or if we fix them to some initial value: 0 -- fixed, 1 -- vary
+    phi_ref: 1
+    t_ref:   0
+    tL_ref:  0 
+    offset:  0
+    m1:      0 
+    m2:      0
+    a1:      1 
+    a2:      1
+    dist:    0
+    z:       0 
+    inc:     1 
+    beta:    0             # beta in SSB frame
+    betaL:   1             # beta in LISA frame
+    lam:     0             # lambda in SSB frame
+    lamL:    1             # lambda in LISA frame
+    psiL:    1
+    the:     0
+    phi:     0
+    mu:      1
+    q:       1 
+  
+default:                   # Default values for the parameters of the model
+
+    f_ref:   0.0                                 # Let phenom codes set f_ref -> fmax = max(f^2A(f))
+    phi_ref: 6.247897265570264                   # 0.0 phase at f_ref (phase at coalescence)
+    tL_ref:  24959947.36292105 #110449.53063857                            # Reference time in the LISA frame
+    t_ref:   24960000.0  # 110000.0 # 1.0 * YRSID_SI         # Reference time (chosen to be at Tc) [s] (in the SSB reference frame) (Will be at the end of waveform)
+    m1:      2599137.035                         # Mass 1 [SolarMass] 
+    m2:      1242860.685                         # Mass 2 [SolarMass]
+    a1:      0.7534821857057837                  # Spin 1 [MassSquared]
+    a2:      0.6215875279643664                  # Spin 2 [MassSquared]
+    dist:    56.00578366287752                   # Distance in [m]? 56 in [Gpc]? !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+    z:       5.7309
+    beta:    0.29269632679489654                 # Ecliptic latitude [rad]
+    betaL:   0.05294026 
+    lam:     3.5091                              # Ecliptic longitude [rad]
+    lamL:    -2.5765926
+    the:     1.8554                              # InitialPolarAnglel [rad]
+    phi:     1.65330190000514                    # InitialAzimuthalAnglel [rad]         
+    inc:     1.22453213                          # Inclination [rad]                  define either (inc,psi), or (theL, phiL) and then convert them to (inc, psi)
+    psiL:    0.83467978                          # Polarization angle [rad]           the reason for that is that LDC data is provided in (theL, phiL)
+    offset:  0.0 #3000.0                              # When estimating offset in seconds instead of the time of the coalescence                           
+    mu:      1543972.48364504                    # Chirp mass
+    q:       0.47818205                          # Mass ratio          
+ 
+limits:
+
+    min:
+      phi_ref: 0.0
+      tL_ref: 110000.0
+      t_ref:  110000.0
+      m1: 2340000.0
+      m2: 1120000.0
+      a1: -1.0                     
+      a2: -1.0                     
+      dist: 40.0                                 # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+      z:    4.5 
+      beta_sin: -1.0                             # Note! prior is uniform in sin. These are limits in sin beta
+      betaL_sin: -1.0                            # Note! prior is uniform in sin. These are limits in sin beta
+      beta: -0.5                                 # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      betaL: -0.5                                # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      lam: 0.0                                   
+      lamL: -1.0                                 # DO NOT FORGET TO MULTIPLY BY PI  
+      the: 0.0               
+      phi_cos: -1.0                              # Note! prior is uniform in cos. These are limits for cos phi             
+      inc_cos: -1.0                              # Note! prior is uniform in cos. These are limits for cos inc 
+      phi: 0.0                                   # These are limits for the angle
+      inc: 0.0                                   # These are limits for the angle
+      psiL: 0.0
+      offset: -600.0
+      mu: 1393972.0
+      q: 0.4
+
+    max:
+      phi_ref: 2.0                              # ! PI 
+      t_ref:  110000.0
+      tL_ref: 110000.0
+      m1: 2860000.0        
+      m2: 1370000.0    
+      a1: 1.0                     
+      a2: 1.0                     
+      dist: 70                                  # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!!                           
+      z: 10
+      beta_sin: 1.0                             # Note! prior is uniform in sin. These are limits for sin beta
+      betaL_sin: 1.0                            # Note! prior is uniform in sin. These are limits for sin beta
+      beta: 0.5                                 # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      betaL: 0.5                                # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      lam: 2.0                                  # DO NOT FORGET TO MULTOPLY BY PI !!!!!!! 
+      lamL: 1.0                                 # DO NOT FORGET TO MULTIPLY BY PI
+      the: 2.0                                  # DO NOT FORGET TO MULTIPLY BY PI !!!!!!! 
+      phi_cos: 1.0                              # Note! prior is uniform in cos. These are limits for cos phi
+      inc_cos: 1.0                              # Note! prior is uniform in cos. These are limits for cos inc
+      phi: 1.0                                  # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      inc: 1.0                                  # DO NOT FORGET TO MULTIPLY BY PI! These are limits for the angle
+      psiL: 1.0                                 # DO NOT FORGET TO MULTIPLY BY PI !!!!!!
+      offset: 600.0
+      mu: 1693972.0 
+      q: 0.6
+
+
+            

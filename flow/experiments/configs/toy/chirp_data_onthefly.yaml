@@ -1,0 +1,38 @@
+# Parameters that are needed for creating data for training 
+# of the simple chirplet model with the data created on the fly.
+
+tvec:                      # Choice of parameters for the time vector
+
+    fs: 256                # Sampling frequency
+    T:  2.0                # Length of time serirs in seconds
+
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, or if we fix them to some initial value
+
+    f0: 1                  # Initial frequency (0 -- fixed, 1 -- vary)
+    fdot: 1                # Derivative of the frequency (0 -- fixed, 1 -- vary)
+    Q: 0                   # Quality factor (0 -- fixed, 1 -- vary)
+    t0: 0                  # Reference time (0 -- fixed, 1 -- vary)
+
+default:                   # Default values for the parameters of the model
+
+    f0: 7.0                # Initial frequency
+    fdot: 5.0              # Frequency derivative
+    Q: 10.0                # Quality factor
+    t0: 1.0                # Reference time
+
+limits:
+
+    min:
+      f0: 5.0 
+      fdot: 3.0
+      Q: 7.0
+      t0: 0.5
+
+    max:
+      f0: 10.0
+      fdot: 7.0
+      Q: 13.0
+      t0: 1.5
+
+

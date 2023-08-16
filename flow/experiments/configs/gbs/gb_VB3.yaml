@@ -1,0 +1,69 @@
+# Set of parameters:
+#  for creating data with GPU based GB model based of FastGB. Data will be created on the fly.
+#  Provide:
+#          - default parameters
+#          - parameter ranges
+#          - specify which parameters vary
+#
+# VB3 AMCVn 
+
+tvec:
+    dt:      15.0         # Cadence
+    Tobs:    1.0 # #31536000.0
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, 
+                           # or if we fix them to some initial value: 0 -- fixed, 1 -- vary
+    amp:      1
+    f0:       1
+    fdot:     1
+    fddot:    0
+    phi0:     1
+    iota:     1
+    psi:      1
+    lam:      1
+    beta:     1
+
+# This section has to be different for each Galactic binary
+# It will be better to separate the section with the priors and the section with the true values.
+default:                   # Default values for the parameters of the model
+
+    # indicies in the list, start from 0
+    # index 3
+    #AMCVn:
+    amp:      2.829116175767089e-22    # amplitude
+    f0:       0.0019441447221331155    # initial frequency
+    fdot:     6.0618971406371515e-18   # frequency derivative 
+    fddot:    0.0                      # second derivative of the frequency
+    phi0:     5.141844767695358        # initial phase
+    iota:     0.7504915783575616       # inclination
+    psi:      3.5671215612441567       # polarisation angle
+    lam:      2.9737231987595103       # ecliptic longitude 
+    beta:     0.6534962530765648       # ecliptic latitude
+
+
+limits:
+
+    min:
+      #fvec:     0.010053 #0.01005481887366819
+      amp:      1.e-23    
+      #f0:       0.010062 # -1.9973  
+      fdot:     -1.e-16     
+      phi0:     0.0       
+      psi:      1.0      
+      lam:      0.0          
+      beta_sin: -1.0
+      iota_cos: -1.0
+      a_s:      -2.  # -20
+
+    max:
+      #fvec:      0.010094 #0.01008218112633181 
+      amp:       5.e-22      
+      #f0:        0.010085 # -1.9963
+      fdot:      1.e-15          
+      phi0:      2.0         # TODO do not forget to add pi                     
+      psi:       2.0         # TODO do not forget to add pi  
+      lam:       2.0         # TODO do not forget to add pi 
+      beta_sin:  1.0
+      iota_cos:  1.0
+      a_s:       2.  # -20
+

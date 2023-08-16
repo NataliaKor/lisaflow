@@ -1,0 +1,78 @@
+# Set of parameters:
+# for creating data with GPU based MBHB model. Data will be created on the fly.
+# Provide:
+#         - default parameters
+#         - parameter ranges
+#         - specify which parameters vary
+
+tvec:
+    dt:      10.0         # Cadence
+
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, 
+                           # or if we fix them to some initial value: 0 -- fixed, 1 -- vary
+    phi_ref: 0
+    t_ref:   0
+    m1:      1 
+    m2:      1
+    a1:      0 
+    a2:      0
+    dist:    0 
+    inc:     0 
+    beta:    0 
+    lam:     0
+    psi:     0 
+    theL:    0
+    phiL:    0
+  
+default:                   # Default values for the parameters of the model
+
+    f_ref:   0.0                                 # Let phenom codes set f_ref -> fmax = max(f^2A(f))
+    phi_ref: 6.247897265570264                   # 0.0 phase at f_ref (phase at coalescence)
+    t_ref:   200000.0 #604800.0 #24960000.0 # 1.0 * YRSID_SI         # Time of coalescence [s] (in the SSB reference frame) (Will be at the end of waveform)
+    m1:      2599137.035                         # Mass 1 [SolarMass] 
+    m2:      1242860.685                         # Mass 2 [SolarMass]
+    a1:      0.7534821857057837                  # Spin 1 [MassSquared]
+    a2:      0.6215875279643664                  # Spin 2 [MassSquared]
+    dist:    56.00578366287752                   # Distance in [m]? 56 in [Gpc]? !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+    beta:    0.29269632679489654                 # Ecliptic latitude [rad]
+    lam:     3.5091                              # Ecliptic longitude [rad]
+    theL:    1.8554                              # InitialPolarAngleL [rad]
+    phiL:    1.65330190000514                    # InitialAzimuthalAngleL [rad]         
+    # inc: np.pi/3.                              # Inclination [rad]                  define either (inc,psi), or (theL, phiL) and then convert them to (inc, psi)
+    # psi: np.pi/6.                              # Polarization angle [rad]           the reason for that is that LDC data is provided in (theL, phiL)
+  
+ 
+limits:
+
+    min:
+      phi_ref: 0.0
+      t_ref: 24959800.0
+      m1: 2340000.0
+      m2: 1120000.0
+      a1: 0.0                     
+      a2: 0.0                     
+      dist: 40.0                                 # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+      beta: -1.0                                 # Note! prior is uniform in sin   
+      lam: 0.0 
+      theL: 0.0               
+      phiL: -1.0                                 # Note! prior is uniform in cos             
+      # inc:  
+      # psi:
+
+    max:
+      phi_ref: 2.0                              # ! PI
+      t_ref: 24960200
+      m1: 2860000.0        
+      m2: 1370000.0    
+      a1: 1.0                     
+      a2: 1.0                     
+      dist: 70                                   # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!!                          
+      beta: 1.0                                  # Note! prior is uniform in sin
+      lam: 2.0                                   # DO NOT FORGET TO MULTOPLY BY PI !!!!!!! 
+      theL: 2.0                                  # DO NOT FORGET TO MULTIPLY BY PI !!!!!!! 
+      phiL: 1.0                                  # Note! prior is unifor min cos
+      # inc:
+      # psi:
+ 
+            
