@@ -13,15 +13,15 @@ from flow.utils.torchutils import *
 from flow.distributions.normal import *
 from flow.networks.mlp import MLP
 
-from flow_architecture_density import *
+from flow_architecture_density_small import *
 
 from torch.utils.data import DataLoader
-from data_loader_sky import NPYDataset
+from data_loader_galaxy import GalaxyDataset
 
 def main(parser):
 
     # Parse command line arguments
-    parser.add_argument('--config', type=str, default='configs/gbs/density_sky.yaml',
+    parser.add_argument('--config', type=str, default='configs/gbs/density.yaml',
                         help='Path to config file specifying model architecture and training procedure')
     parser.add_argument('--resume', type=int, default=1, help='Flag whether to resume training')
 
@@ -57,7 +57,7 @@ def main(parser):
  
     # Load min and max values to normalise back 
     filename = config['samples']['path']
-    dataset_gb = NPYDataset(filename)
+    dataset_gb = GalaxyDataset(filename)
     param_min = dataset_gb.samples_min
     param_max = dataset_gb.samples_max 
 
@@ -75,7 +75,7 @@ def main(parser):
 #            samples = np.vstack([samples, samples_temp])
 
         for j in range(param_min.shape[0]):
-            samples[:,j] = param_min[j] + samples[:,j]*(param_max[j] - param_min[j])
+            samples[:,j] = param_min[j] + (samples[:,j] + 1.0)*(param_max[j] - param_min[j])/2.0
         print('samples = ', samples)
 
 if __name__=='__main__':
