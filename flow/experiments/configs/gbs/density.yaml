@@ -2,6 +2,8 @@
 # Gaussian base distribution with resampling.
 # Data is generated on the fly.
 
+gpu: 1
+
 model:                                 # Properties of the model
 
     base:                              # Base distribution
@@ -45,14 +47,14 @@ training:
     seed: 1                            # Seed for training run
     grad_norm_clip_value: 5. # 0            # Value by which to clip the norm of the gradient 
     resume: 0 # 1                          # Resume training (1) or start from scratch (0).
-    checkpoints: checkpoint_1.pt     # Path to the checkpoint from which we are going to resume the training
+    checkpoints: checkpoint_3.pt     # Path to the checkpoint from which we are going to resume the training
 
 samples:
     path: /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/GBs_sky_dist.hdf5
 
 saving:
 
-    save_root: /sps/lisaf/natalia/training_data/density/
+    save_root: /sps/lisaf/natalia/training_data/density_galaxy/
     label: galaxy
 
 plots:
