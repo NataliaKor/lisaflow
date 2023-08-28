@@ -47,7 +47,7 @@ training:
     seed: 1                            # Seed for training run
     grad_norm_clip_value: 5. # 0            # Value by which to clip the norm of the gradient 
     resume: 0 # 1                          # Resume training (1) or start from scratch (0).
-    checkpoints: checkpoint_3.pt     # Path to the checkpoint from which we are going to resume the training
+    checkpoints: checkpoint.pt     # Path to the checkpoint from which we are going to resume the training
 
 samples:
     path: /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/GBs_sky_dist.hdf5
