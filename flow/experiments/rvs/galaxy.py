@@ -3,6 +3,7 @@
 import numpy as np
 
 import torch
+import cupy as cp
 
 from flow.utils.torchutils import *
 from flow.distributions.normal import *
@@ -70,7 +71,8 @@ class Galaxy(nn.Module):
         Args:
             num_samples: number of samples to draw
         Returns:
-            randoem samples with the corresponding log probabilities
+            random samples with the corresponding log probabilities
+            type: cupy tensor 
         """       
         if self.flow is None:
             raise ValueError(
@@ -83,23 +85,29 @@ class Galaxy(nn.Module):
             #samples = samples_gpu.squeeze().cpu().detach().numpy()
 
             samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
- 
-        return samples, log_prob
+
+            samples_cupy = cp.asarray(samples)
+            log_prob_cupy = cp.asarray(log_prob)
+        
+        return samples_cupy, log_prob_cupy
 
 
-    def log_prob(self, inputs):
+    def log_prob(self, inputs_cupy):
         """Calculate log probability for the sample.
 
         Args:
             inputs: sample prom the distribution
+            type: cupy tensor
         Returns:
             log probability of the inputs
         """
+        inputs = torch.as_tensor(inputs_cupy, device = self.dev)
         self.flow.eval()
         with torch.no_grad():
             inputs = 2.0*(inputs - self.param_min)/(self.param_max - self.param_min) - 1.0
             log_prob = self.flow.log_prob(inputs)
-        return log_prob
+        log_prob_cupy = cp.asarray(log_prob)
+        return log_prob_cupy
 
 
 
