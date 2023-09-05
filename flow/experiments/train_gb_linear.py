@@ -247,12 +247,12 @@ def main(parser):
     #########################################################################################################################
     # Set optimisers and schedulers
 
-    checkpoint = torch.load(config['saving']['save_root'] + config['training']['checkpoints'])
-    flow.load_state_dict(checkpoint['model_state_dict'])
+    #checkpoint = torch.load(config['saving']['save_root'] + config['training']['checkpoints'])
+    #flow.load_state_dict(checkpoint['model_state_dict'])
 
     # Choose optimiser
-    #optimizer = optim.Adam(flow.parameters(), lr=config['training']['learning_rate'], weight_decay=config['training']['weight_decay'])
-    optimizer = optim.SGD(flow.parameters(), lr=config['training']['learning_rate'])
+    optimizer = optim.Adam(flow.parameters(), lr=config['training']['learning_rate'], weight_decay=config['training']['weight_decay'])
+    #optimizer = optim.SGD(flow.parameters(), lr=config['training']['learning_rate'])
     # Schedule for learning rate annealing
     if anneal_learning_rate:
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = config['training']['num_training_steps'], eta_min=0, last_epoch=-1)
@@ -262,8 +262,8 @@ def main(parser):
     # TODO save scheduler in the checkpoint and load it
     # Choose to resume training from the previous training results or start fresh
     if config['training']['resume']:
-        #checkpoint = torch.load(config['saving']['save_root'] + config['training']['checkpoints'])
-        #flow.load_state_dict(checkpoint['model_state_dict'])
+        checkpoint = torch.load(config['saving']['save_root'] + config['training']['checkpoints'])
+        flow.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         last_epoch = checkpoint['epoch']
@@ -300,7 +300,7 @@ def main(parser):
     max_Aim_batch = cp.amax(cp.imag(A))
     max_Eim_batch  = cp.amax(cp.imag(E))
 
-    max_batch = 2000.0 # 100.0
+    max_batch = 150.0 # 100.0
 
     min_Er_batch = cp.amin(cp.real(E))
     min_Aim_batch = cp.amin(cp.imag(A))
@@ -347,8 +347,7 @@ def main(parser):
                               torch.as_tensor(cp.real(E)/max_batch).type(dtype),
                               torch.as_tensor(cp.imag(A)/max_batch).type(dtype),
                               torch.as_tensor(cp.imag(E)/max_batch).type(dtype))) #,  freqs_one), 1)
-      
-         
+            
         waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1)) 
         #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
        
@@ -378,6 +377,8 @@ def main(parser):
                                   torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(batch_size, -1), 
                                   torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(batch_size, -1)), 1)#, freqs_arr), 1)
             
+            print('torch.max(waveform) = ', torch.max(waveform))
+            print('torch.min(waveform) = ', torch.min(waveform)) 
           
             waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1))
             #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
