@@ -38,7 +38,7 @@ model:                                 # Properties of the model
 training:
 
     batch_size: 16384 # 8192 # 16384                  # Batch size
-    epochs: 100                       # Number of epochs
+    epochs: 500                       # Number of epochs
     max_iter: 500                      # Number of iterations inside one ephoch, useful only when the data is created on the fly 
     learning_rate: 2.e-4               # Initial learning rate.
     anneal_learning_rate: 1            # Adjust learnng rate with the cosine annealing. 1 -- TRUE, 0 -- FALSE
@@ -50,13 +50,13 @@ training:
     checkpoints: checkpoint.pt     # Path to the checkpoint from which we are going to resume the training
 
 samples:
-    path: /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/GBs_sky_dist.hdf5
+    path:  /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/galaxy_sky_dist_log.npy
 
 saving:
 
-    save_root: /sps/lisaf/natalia/training_data/density_galaxy/
-    label: galaxy
+    save_root: /sps/lisaf/natalia/training_data/density_galaxy_log/
+    label: galaxy_log
 
 plots:
 
-    label: galaxy
+    label: galaxy_log
