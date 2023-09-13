@@ -59,7 +59,7 @@ class Galaxy(nn.Module):
 
         # Load min and max values to normalise back 
         #filename_ = self.config['samples']['path']
-        param_min, param_max = np.loadtxt('minmax_galaxy_sangria.txt')
+        param_min, param_max = np.loadtxt('minmax_galaxy_sangria_log.txt')
         self.param_min = self.dtype(param_min)
         self.param_max = self.dtype(param_max)
 
