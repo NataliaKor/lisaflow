@@ -20,8 +20,10 @@ from flow.networks.mlp import MLP
 
 from flow_architecture_density_small import *
 from torch.utils.data import DataLoader
-from data_loader_galaxy import GalaxyDataset 
+#from data_loader_galaxy import GalaxyDataset 
+from data_loader_sky import NPYDataset
 
+import h5py
 import time
 
 def main(parser):
@@ -55,7 +57,7 @@ def main(parser):
 
     # Initialise dataloader
     filename = config['samples']['path']
-    dataset_gb = GalaxyDataset(filename)
+    dataset_gb =  NPYDataset(filename)
     # Dataloader for training data
     loader = DataLoader(dataset_gb,
                         batch_size=batch_size,
@@ -200,7 +202,7 @@ def main(parser):
             print('Do corner plot')
             # TODO check what are the values of the truths and coeff_true
             #make_cp_density_estimation(flow, j, parameter_labels, param_min, param_max, label)
-            make_cp_density_estimation_minus1(flow, j, parameter_labels, param_min, param_max, label, filename)
+            make_cp_density_estimation_minus1_galaxy(flow, j, parameter_labels, param_min, param_max, label, filename)
             # For this purposes we need to create different pp-plot, where we check for the transformed distribution 
             # how many points were created and if they are whithin the countour they should be in
 
