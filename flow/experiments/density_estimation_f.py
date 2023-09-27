@@ -18,7 +18,7 @@ from flow.distributions.normal import *
 from flow.distributions.resample import *
 from flow.networks.mlp import MLP
 
-from flow_architecture_density import *
+from flow_architecture_density_small import *
 from torch.utils.data import DataLoader
 from data_loader_f import NPYDataset 
 

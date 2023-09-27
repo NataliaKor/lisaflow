@@ -11,12 +11,16 @@ class NPYDataset(Dataset):
     
     def __init__(self, filename):
         'Initialisation'
-        self.samples = np.load(filename)
+        samples = np.load(filename)
 
-        self._samples_min = self.samples.min(axis=0)
-        self._samples_max = self.samples.max(axis=0)
-        print('self._samples_min = ', self._samples_min)
+        samples[:,0] = np.log(samples[:,0])
+        samples[:,1] = np.sign(samples[:,1])*np.log10(np.abs(samples[:,1]))
 
+        self._samples_min = samples.min(axis=0)
+        self._samples_max = samples.max(axis=0)
+       
+        self.samples = 2.0*(samples[index,:] - self._samples_min)/(self._samples_max - self._samples_min) - 1.0
+ 
         #figure = corner.corner(self.samples)
         #plt.savefig('samples_5.png')
         #plt.close()
@@ -27,8 +31,7 @@ class NPYDataset(Dataset):
             
     def __getitem__(self, index):
         'Generates one sample of data' 
-        sampl = (self.samples[index,:] - self._samples_min)/(self._samples_max - self._samples_min)
-        return sampl
+        return self.samples[index,:]
 
     def __len__(self):
         'Denotes the total number of samples'

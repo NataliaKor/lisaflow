@@ -14,17 +14,24 @@ model:                                 # Properties of the model
 
     transform:
       type: rq-coupling                # Type of the transform blocks. At the moment use just one but should be extended to more in the future.
-      hidden_features: 512             
-      num_blocks: 6 # 10                   # Number of times the flow transformation is applied.
-      dropout: 0.05
+      hidden_features: 256             
+      num_blocks: 4 # 10                   # Number of times the flow transformation is applied.
+      dropout: 0.2
       batch_norm: 1
       num_bins: 5  # 3
       tail_bound: 5                    # Box is on [-bound, bound]^2 Can be from 1 to 5
       unconditional_transform: False   # Apply unconditional transform
       activation: relu
 
+    affine:
+      hidden_features: 256
+      num_blocks: 2
+      dropout: 0.2
+      batch_norm: 1
+      activation: relu
+
     flow:
-      num_flow_steps: 6 # 12              # Number of times the flow transformation is applied
+      num_flow_steps: 4 # 12              # Number of times the flow transformation is applied
 
 training:
 
