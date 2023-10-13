@@ -78,13 +78,35 @@ class Galaxy(nn.Module):
             raise ValueError(
                     "The values of the weights have to be loaded to the network"
                 )
+  
         self.flow.eval()
         with torch.no_grad():
 
-            samples, log_prob = self.flow.sample_and_log_prob(num_samples)
-            #samples = samples_gpu.squeeze().cpu().detach().numpy()
+            # Check if number of samples is not too large. Generally doesnot work for million samples.
+            # Cuda error when tensors are too large.
+            if num_samples > 500000:
+                num_sampl_small = 100000
+                modulo_part = num_samples % num_sampl_small
+                integer_part = num_samples // num_sampl_small
 
-            samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
+                samples, log_prob = self.flow.sample_and_log_prob(num_sampl_small)
+                log_prob = torch.unsqueeze(log_prob, 1)
+
+                if integer_part > 1:
+                    for i in range(0, integer_part-1):
+                        samples_temp, log_prob_temp = self.flow.sample_and_log_prob(num_sampl_small)
+                        log_prob_temp = torch.unsqueeze(log_prob_temp, 1)
+                        samples = torch.vstack([samples, samples_temp])
+                        log_prob = torch.vstack([log_prob, log_prob_temp])
+                samples_temp, log_prob_temp = self.flow.sample_and_log_prob(modulo_part)
+                log_prob_temp = torch.unsqueeze(log_prob_temp, 1) 
+                samples = torch.vstack([samples, samples_temp])
+                log_prob = torch.vstack([log_prob, log_prob_temp])
+ 
+            else:
+
+                samples, log_prob = self.flow.sample_and_log_prob(num_samples)
+                samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
 
             samples_cupy = cp.asarray(samples)
             log_prob_cupy = cp.asarray(log_prob)

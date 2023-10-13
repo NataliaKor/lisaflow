@@ -13,11 +13,11 @@ def main(parser):
     args = parser.parse_args()
     gal = Galaxy(args.config)
     gal.load_fit()
-    samples, log_prob1 = gal.sample(5)
-    print('samples = ', samples)
-    print('log_prob1 = ', log_prob1)
+    samples, log_prob1 = gal.sample(2050000)
+    #print('samples = ', samples)
+    #print('log_prob1 = ', log_prob1)
     log_prob2 = gal.log_prob(samples)
-    print('log_prob2 = ', log_prob2)
+    #print('log_prob2 = ', log_prob2)
 
 
 if __name__=='__main__':
