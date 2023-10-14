@@ -35,12 +35,12 @@ else:
    print('gpu = ', gpu)
 
 # Create samples of the noise with the defined variance
-def sample_noise(variance, df, dt):#, sample_shape):
+def sample_noise(variance, df, dt, batch_size, num):
 
    #n_real = xp.random.normal(loc=0.0, scale=np.sqrt(variance)/(dt*np.sqrt(4.0*df)))#, size=sample_shape)
    #n_imag = xp.random.normal(loc=0.0, scale=np.sqrt(variance)/(dt*np.sqrt(4.0*df)))#, size=sample_shape)
-   n_real = xp.random.normal(loc=0.0, scale=xp.sqrt(variance)/(xp.sqrt(4.0*df)))#, size=sample_shape)
-   n_imag = xp.random.normal(loc=0.0, scale=xp.sqrt(variance)/(xp.sqrt(4.0*df)))#, size=sample_shape)
+   n_real = xp.random.normal(loc=0.0, scale=xp.sqrt(variance)/(xp.sqrt(4.0*df)), size=(batch_size, num))
+   n_imag = xp.random.normal(loc=0.0, scale=xp.sqrt(variance)/(xp.sqrt(4.0*df)), size=(batch_size, num))
 
    return n_real+1j*n_imag
    
@@ -111,7 +111,7 @@ class GB_gpu(Source):
             psi =  xp.random.uniform(self.config_data['limits']['min']['psi'] * xp.pi, self.config_data['limits']['max']['psi'] * xp.pi, N)    # np.pi
     
             ffdot = xp.zeros(N) 
-            self.params0 = xp.array([amp, f0, fdot, ffdot, phi0, iota, psi, lam, beta]) # Check if it matters if it is phi0 or -phi0
+            self.params0 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi, lam, beta]) # Check if it matters if it is phi0 or -phi0
             # Construct batch of paramaters fro sampling
             sampling_parameters = xp.vstack((f0, fdot, beta_sin, lam, iota_cos, amp, phi0, psi)).T
 
@@ -203,7 +203,7 @@ class GB_gpu(Source):
 
          
     # Create waveform combinations
-    def create_waveform(self):
+    def create_waveform(self, iteration):
 
  
         if self.sample_physical == True:
@@ -217,9 +217,10 @@ class GB_gpu(Source):
             gb1.run_wave(*self.params1, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
             gb2.run_wave(*self.params2, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
 
-        # Put waveforms in a common frequency band    
-        fvec_min = self.f0 - self.df*3.0*self.num_f/2.0
-        fvec_max = self.f0 + self.df*3.0*self.num_f/2.0
+        # Put waveforms in a common frequency band  
+        #print('self.num_f = ', self.num_f)  
+        fvec_min = self.f0 - self.df*3.0*(self.num_f)/2.0
+        fvec_max = self.f0 + self.df*3.0*(self.num_f)/2.0
 
         self.k_min = np.floor(fvec_min/self.df).astype(int)
         k_max = np.ceil(fvec_max/self.df).astype(int)
@@ -236,14 +237,19 @@ class GB_gpu(Source):
         '''
           Add noise to the data and whiten frequency waveform with theoretical PSD.
         '''
-        noise = AnalyticNoise(self.freqs, 'MRDv1')
+        #noise = AnalyticNoise(self.freqs, 'MRDv1')
+        #psd_A, psd_E = noise.psd(option="A"), noise.psd(option="E")
+        noise = AnalyticNoise(self.f0, 'MRDv1')
         psd_A, psd_E = noise.psd(option="A"), noise.psd(option="E")
 
-        noiseA = sample_noise(xp.array(psd_A), self.df, self.dt)
-        noiseE = sample_noise(xp.array(psd_E), self.df, self.dt)
-        
         batch_size = gb1.A.shape[0]
-
+       
+        #noiseA = sample_noise(xp.array(psd_A), self.df, self.dt, )
+        #noiseE = sample_noise(xp.array(psd_E), self.df, self.dt, )
+ 
+        noiseA = sample_noise(psd_A, self.df, self.dt, batch_size, self.num)
+        noiseE = sample_noise(psd_E, self.df, self.dt, batch_size, self.num)
+        
         if self.sample_physical == True:
             signal_A = gb1.A
             signal_E = gb1.E
@@ -281,13 +287,31 @@ class GB_gpu(Source):
 
             #xA = (xA + noiseA)*xp.sqrt(4.0*self.df)*self.dt/xp.sqrt(xp.array(psd_A))  # check if we need factor of dt here of not
             #xE = (xE + noiseE)*xp.sqrt(4.0*self.df)*self.dt/xp.sqrt(xp.array(psd_E))  # check if we need factor of dt here of not
-            xA = (xA + noiseA)*xp.sqrt(4.0*self.df)/xp.sqrt(xp.array(psd_A))  # check if we need factor of dt here of not
-            xE = (xE + noiseE)*xp.sqrt(4.0*self.df)/xp.sqrt(xp.array(psd_E))  # check if we need factor of dt here of not
-
+            xA = (xA + noiseA[i,:])*xp.sqrt(4.0*self.df)/xp.sqrt(psd_A)  # check if we need factor of dt here of not
+            xE = (xE + noiseE[i,:])*xp.sqrt(4.0*self.df)/xp.sqrt(psd_E)  # check if we need factor of dt here of not
 
             A_white[i,:] = xA        
             E_white[i,:] = xE
-    
+  
+        if iteration == 0:
+            if self.config['training']['resume'] == 0:
+                self.Ar_mean = xp.mean(xp.real(A_white), axis=0)
+                self.Er_mean = xp.mean(xp.real(E_white), axis=0)
+                self.Ar_std  = xp.std(xp.real(A_white), axis=0)
+                self.Er_std  = xp.std(xp.real(E_white), axis=0)     
+                self.Aim_mean = xp.mean(xp.imag(A_white), axis=0)
+                self.Eim_mean = xp.mean(xp.imag(E_white), axis=0)
+                self.Aim_std  = xp.std(xp.imag(A_white), axis=0)
+                self.Eim_std  = xp.std(xp.imag(E_white), axis=0)     
+
+                np.savetxt('means_wf' + self.config['saving']['label'] + '.txt', np.c_[self.Ar_mean.get(), self.Er_mean.get(), self.Aim_mean.get(), self.Eim_mean.get()])
+                np.savetxt('stds_wf' + self.config['saving']['label'] + '.txt', np.c_[self.Ar_std.get(), self.Er_std.get(), self.Aim_std.get(), self.Eim_std.get()])
+
+            else:
+
+                self.Ar_mean, self.Er_mean, self.Aim_mean, self.Eim_mean = xp.loadtxt('means_wf' + self.config['saving']['label'] + '.txt')
+                self.Ar_std, self.Er_std, self.Aim_std, self.Eim_std = xp.loadtxt('stds_wf' + self.config['saving']['label'] + '.txt')
+ 
         return A_white, E_white
 
         
@@ -302,6 +326,13 @@ class GB_gpu(Source):
 
     def get_param_std(self):
         return self.parameters_std
+
+    def get_wf_mean(self):
+        return self.Ar_mean, self.Er_mean, self.Aim_mean, self.Eim_mean
+
+    def get_wf_std(self):
+        return self.Ar_std, self.Er_std, self.Aim_std, self.Eim_std
+
 
     def get_freqs(self):
         return self.freqs 
@@ -350,8 +381,8 @@ class GB_gpu(Source):
         noise = AnalyticNoise(self.freqs, 'MRDv1')
         noisevals_A, noisevals_E = noise.psd(option="A"), noise.psd(option="E")
      
-        noiseA = sample_noise(xp.array(noisevals_A), self.df, self.dt)#, A_out.shape)
-        noiseE = sample_noise(xp.array(noisevals_E), self.df, self.dt)#, E_out.shape)
+        noiseA = sample_noise(xp.array(noisevals_A), self.df, self.dt, 1, self.num)#, A_out.shape)
+        noiseE = sample_noise(xp.array(noisevals_E), self.df, self.dt, 1, self.num)#, E_out.shape)
 
         #A_white = (A_out/self.dt + noiseA) * xp.sqrt(4.0*self.df)*self.dt/xp.sqrt(xp.array(noisevals_A))
         #E_white = (E_out/self.dt + noiseE) * xp.sqrt(4.0*self.df)*self.dt/xp.sqrt(xp.array(noisevals_E))
@@ -406,8 +437,8 @@ class GB_gpu(Source):
         noise = AnalyticNoise(self.freqs, 'MRDv1')
         noisevals_A, noisevals_E = noise.psd(option="A"), noise.psd(option="E")
 
-        noiseA = sample_noise(xp.array(noisevals_A), self.df, self.dt)#, A_out.shape)
-        noiseE = sample_noise(xp.array(noisevals_E), self.df, self.dt)#, E_out.shape)
+        noiseA = sample_noise(xp.array(noisevals_A), self.df, self.dt, batch_size, num)#, A_out.shape)
+        noiseE = sample_noise(xp.array(noisevals_E), self.df, self.dt, batch_size, num)#, E_out.shape)
 
         A_white = (A_out + noiseA) * xp.sqrt(4.0*self.df)*self.dt*self.dt/xp.sqrt(xp.array(noisevals_A)) # !!!! TWO TIMES MULTIPLY BY dt
         E_white = (E_out + noiseE) * xp.sqrt(4.0*self.df)*self.dt*self.dt/xp.sqrt(xp.array(noisevals_E))  # !!!! TWO TIMES MULTIPLY BY dt
