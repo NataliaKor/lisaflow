@@ -10,12 +10,12 @@ from flow.distributions.normal import *
 
 from flow.experiments.flow_architecture_density_small import *
 
-class Galaxy(nn.Module):
+class Galaxylog(nn.Module):
     """
-     Class for the Galaxy distribution.
+     Class for the log Galaxy distribution.
     """
     def __init__(self, config_file):
-        super(Galaxy, self).__init__()
+        super(Galaxylog, self).__init__()
         # Load config file     
         self.config = get_config(config_file)
         # Choose CPU or GPU
@@ -58,7 +58,7 @@ class Galaxy(nn.Module):
 
         # Load min and max values to normalise back 
         #filename_ = self.config['samples']['path']
-        param_min, param_max = np.loadtxt('minmax_galaxy_sangria.txt')
+        param_min, param_max = np.loadtxt('minmax_galaxy_sangria_log.txt')
         self.param_min = self.dtype(param_min)
         self.param_max = self.dtype(param_max)
         
@@ -112,7 +112,7 @@ class Galaxy(nn.Module):
         
         return samples_cupy, log_prob_cupy
 
-
+    # TODO: This has to be different for log Galaxy
     def log_prob(self, inputs_cupy):
         """Calculate log probability for the sample.
            All parameters unnormalised, normalisation performed inside function.
