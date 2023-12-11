@@ -131,11 +131,11 @@ class Galaxy(nn.Module):
             log_prob = self.flow.log_prob(inputs)
  
             # Jacobian of the forward transform
-            log_prob_norm1_forward = - cp.log(cp.power(10,inputs_nonorm[:,0])) - cp.log(cp.log(10))
+            log_prob_norm1_forward = cp.log(cp.power(10,inputs_nonorm[:,0])) + cp.log(cp.log(10))
             log_prob_norm2_forward = cp.log(8) - cp.log(self.param_max[0] - self.param_min[0]) - \
                                                  cp.log(self.param_max[1] - self.param_min[1]) - \
                                                  cp.log(self.param_max[0] - self.param_min[0])
-
+        print('log_prob_total =  ', log_prob + log_prob_norm1_forward + log_prob_norm2_forward)
         log_prob_cupy = cp.asarray(log_prob)
         return log_prob_cupy
 
