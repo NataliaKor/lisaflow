@@ -1,6 +1,7 @@
 # In the future create base class for fiting and sampling distributions.
 # Inherit Galaxy class from the base class.
 import torch
+import numpy as np
 import cupy as cp
 from rv_base import RV_base
 
@@ -21,11 +22,17 @@ class Galaxy(RV_base):
         Returns:
             log probability of the inputs
         """
+
         inputs_nonorm = torch.as_tensor(inputs_cupy, device = self.dev)
+
         self.flow.eval()
         with torch.no_grad():
+            
             inputs = 2.0*(inputs_nonorm - self.param_min)/(self.param_max - self.param_min) - 1.0
-            log_prob = self.flow.log_prob(inputs)
+            
+            log_prob = torch.zeros((inputs.shape[0],))
+            for (stind, endind, inputs_batch) in self.get_batchs(inputs):
+                log_prob[stind: endind] = self.flow.log_prob(inputs_batch)
  
             # Jacobian of the forward transform
             log_prob_norm1_forward = cp.log(cp.log(10)) - cp.log(cp.power(10,inputs_nonorm[:,0])) + \

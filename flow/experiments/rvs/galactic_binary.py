@@ -22,8 +22,9 @@ class GalacticBinary(nn.Module):
         # Load config file     
         self.config = get_config(config_file)
         # Choose CPU or GPU
-        if self.config['gpu'] == 1:
-            self.dev = "cuda:0"
+        if self.config['gpu'] is not None:
+            assert isinstance(self.config['gpu'], int)
+            self.dev = f"cuda:{self.config['gpu']}"
             self.dtype = torch.cuda.FloatTensor
         else:
             self.dev = "cpu"

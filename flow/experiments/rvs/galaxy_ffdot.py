@@ -24,7 +24,10 @@ class GalaxyFFdot(RV_base):
         self.flow.eval()
         with torch.no_grad():
             inputs = 2.0*(inputs_nonorm - self.param_min)/(self.param_max - self.param_min) - 1.0
-            log_prob = self.flow.log_prob(inputs)
+
+            log_prob = torch.zeros((inputs.shape[0],))
+            for (stind, endind, inputs_batch) in self.get_batchs(inputs):
+                log_prob[stind: endind] = self.flow.log_prob(inputs_batch)
 
             # Jacobian of the forward transform
             inputs_nonorm[:,0] = torch.exp(inputs_nonorm[:,0])
@@ -34,7 +37,5 @@ class GalaxyFFdot(RV_base):
             log_prob_norm2_forward = cp.log(8) - cp.log(self.param_max[0] - self.param_min[0]) - \
                                                  cp.log(self.param_max[1] - self.param_min[1]) - \
                                                  cp.log(self.param_max[0] - self.param_min[0])
-
-            log_prob = self.flow.log_prob(inputs)
         log_prob_cupy = cp.asarray(log_prob) + log_prob_norm1_forward + log_prob_norm2_forward
         return log_prob_cupy

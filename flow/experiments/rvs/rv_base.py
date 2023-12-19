@@ -16,8 +16,9 @@ class RV_base(nn.Module):
         # Load config file     
         self.config = get_config(config_file)
         # Choose CPU or GPU
-        if self.config['gpu'] == 1:
-            self.dev = "cuda:0"
+        if self.config['gpu'] is not None:
+            assert isinstance(self.config['gpu'], int)
+            self.dev = f"cuda:{self.config['gpu']}"
             self.dtype = torch.cuda.FloatTensor
         else:
             self.dev = "cpu"
@@ -53,7 +54,7 @@ class RV_base(nn.Module):
         flow = Flow(transform, distribution).to(self.dev)
 
         # Define path 
-        checkpoint = torch.load(self.config['saving']['save_root'] + self.config['training']['checkpoints'])
+        checkpoint = torch.load(self.config['saving']['save_root'] + self.config['training']['checkpoints'], self.dev)
         flow.load_state_dict(checkpoint['model_state_dict'])
 
         # Load min and max values to normalise back the distribution
@@ -64,6 +65,17 @@ class RV_base(nn.Module):
         self.param_max = self.dtype(param_max)
 
         self.flow = flow
+
+    def get_batchs(self, inputs: torch.tensor) -> torch.tensor:
+        
+        batch_size = int(1e6)
+        num_running = inputs.shape[0]
+        inds = np.arange(0, num_running, batch_size)
+        if inds[-1] != num_running - 1:
+            inds = np.concatenate([inds, np.array([num_running - 1])])
+
+        for stind, endind in zip(inds[:-1], inds[1:]):
+            yield stind, endind, inputs[stind:endind]
 
 
     def sample(self, num_samples):
@@ -107,6 +119,7 @@ class RV_base(nn.Module):
             else:
 
                 samples, log_prob = self.flow.sample_and_log_prob(num_samples)
+
             samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
 
             samples_cupy = cp.asarray(samples)
