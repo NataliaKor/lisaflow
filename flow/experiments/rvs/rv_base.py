@@ -134,7 +134,7 @@ class RV_base(nn.Module):
             samples = self._renormalise(samples)
 
             samples_cupy = cp.asarray(samples)
-            log_prob_cupy = cp.asarray(log_prob)
+            #log_prob_cupy = cp.asarray(log_prob)
 
         return samples_cupy #, log_prob_cupy
 
