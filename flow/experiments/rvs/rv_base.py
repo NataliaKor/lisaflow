@@ -60,12 +60,18 @@ class RV_base(nn.Module):
         # Load min and max values to normalise back the distribution
         # Alternatively it can be reestimated through the dataloader class
         # path_minmax = 'minmax_galaxy_sangria.txt' 
-        param_min, param_max = np.loadtxt(path_minmax)
-        self.param_min = self.dtype(param_min)
-        self.param_max = self.dtype(param_max)
+        #param_min, param_max = np.loadtxt(path_minmax)
+        #self.param_min = self.dtype(param_min)
+        #self.param_max = self.dtype(param_max)
 
         self.flow = flow
 
+    def set_min(param_min):
+        self.param_min = self.dtype(param_min)
+    
+    def set_max(param_max):
+        self.param_max = self.dtype(param_max)
+ 
     def get_batchs(self, inputs: torch.tensor) -> torch.tensor:
         
         batch_size = int(1e6)
