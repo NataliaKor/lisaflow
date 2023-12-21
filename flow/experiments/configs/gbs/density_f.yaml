@@ -1,7 +1,7 @@
 # Config file for MBHB run. Vary only 2 parameters: m1 and m2.
 # Gaussian base distribution with resampling.
 # Data is generated on the fly.
-gpu: 1
+gpu: 0
 
 model:                                 # Properties of the model
 
@@ -19,7 +19,7 @@ model:                                 # Properties of the model
       num_blocks: 4 # 10                   # Number of times the flow transformation is applied.
       dropout: 0.2
       batch_norm: 1
-      num_bins: 5 #5  # 3
+      num_bins: 7 #5  # 3
       tail_bound: 5                    # Box is on [-bound, bound]^2 Can be from 1 to 5
       unconditional_transform: False   # Apply unconditional transform
       activation: relu
@@ -37,16 +37,16 @@ model:                                 # Properties of the model
 training:
 
     batch_size: 16384                  # Batch size
-    epochs: 100                       # Number of epochs
+    epochs: 500                       # Number of epochs
     max_iter: 500                      # Number of iterations inside one ephoch, useful only when the data is created on the fly 
     learning_rate: 2.e-4               # Initial learning rate.
     anneal_learning_rate: 1            # Adjust learnng rate with the cosine annealing. 1 -- TRUE, 0 -- FALSE
-    num_training_steps: 100           # Number of total training steps (important for annealing of the learning rate)
+    num_training_steps: 1000           # Number of total training steps (important for annealing of the learning rate)
     weight_decay: 1.e-5                # Parameter used in the optimiser
     seed: 1                            # Seed for training run
     grad_norm_clip_value: 0            # Value by which to clip the norm of the gradient 
     resume: 0                          # Resume training (1) or start from scratch (0).
-    checkpoints: checkpoint_f_fdot.pt     # Path to the checkpoint from which we are going to resume the training
+    checkpoints: checkpoint_9.pt     # Path to the checkpoint from which we are going to resume the training
 
 samples:
     path: /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/galaxy_f.npy
