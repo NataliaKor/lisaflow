@@ -12,7 +12,7 @@ class GalacticBinary(RV_base):
     def __init__(self, config_file):
         super(GalacticBinary, self).__init__(config_file)
 
-    def _log_prob(self, inputs):
+    def _log_prob(self, inputs_cupy):
         """Calculate log probability for the sample.
            All parameters unnormalised, normalisation performed inside function.
            Parameters of the Galactic Binaries are normalised from 0 to 1.  
@@ -23,7 +23,8 @@ class GalacticBinary(RV_base):
             log probability of the inputs
         """
         # Make variable agnostic to be used on CPU/GPU
-        xp = cp.get_array_module(inputs)
+        xp = cp.get_array_module(inputs_cupy)
+        inputs = torch.as_tensor(inputs_cupy, device = self.dev)
         self.flow.eval()
         with torch.no_grad():
             #inputs = 2.0*(inputs - self.param_min)/(self.param_max - self.param_min) - 1.0
@@ -40,5 +41,5 @@ class GalacticBinary(RV_base):
                                               #  cp.log(self.param_max[1] - self.param_min[1]) - \
                                               #  cp.log(self.param_max[0] - self.param_min[0])
         #log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
-        return log_prob + log_prob_norm_forward
+        return cp.asarray(log_prob) + log_prob_norm_forward
                                                                             
