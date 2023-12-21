@@ -107,26 +107,31 @@ class RV_base(nn.Module):
                 num_sampl_small = 100000
                 modulo_part = num_samples % num_sampl_small
                 integer_part = num_samples // num_sampl_small
-                samples, log_prob = self.flow.sample_and_log_prob(num_sampl_small)
-                log_prob = torch.unsqueeze(log_prob, 1)
+                samples = self.flow.samples(num_sampl_small)
+                #samples, log_prob = self.flow.sample_and_log_prob(num_sampl_small)
+                #log_prob = torch.unsqueeze(log_prob, 1)
 
                 if integer_part > 1:
                     for i in range(0, integer_part-1):
-                        samples_temp, log_prob_temp = self.flow.sample_and_log_prob(num_sampl_small)
-                        log_prob_temp = torch.unsqueeze(log_prob_temp, 1)
+                        samples_temp = self.flow.sample(num_sampl_small) 
+                        #samples_temp, log_prob_temp = self.flow.sample_and_log_prob(num_sampl_small)
+                        #log_prob_temp = torch.unsqueeze(log_prob_temp, 1)
                         samples = torch.vstack([samples, samples_temp])
-                        log_prob = torch.vstack([log_prob, log_prob_temp])
+                        #log_prob = torch.vstack([log_prob, log_prob_temp])
                 if modulo_part > 0:
-                    samples_temp, log_prob_temp = self.flow.sample_and_log_prob(modulo_part)
-                    log_prob_temp = torch.unsqueeze(log_prob_temp, 1)
+                    samples_temp = self.flow.sample(modulo_part)
+                    #samples_temp, log_prob_temp = self.flow.sample_and_log_prob(modulo_part)
+                    #log_prob_temp = torch.unsqueeze(log_prob_temp, 1)
                     samples = torch.vstack([samples, samples_temp])
-                    log_prob = torch.vstack([log_prob, log_prob_temp])
+                    #log_prob = torch.vstack([log_prob, log_prob_temp])
 
             else:
 
-                samples, log_prob = self.flow.sample_and_log_prob(num_samples)
+                #samples, log_prob = self.flow.sample_and_log_prob(num_samples)
+                samples = self.flow.sample(num_samples)
 
-            samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
+            #samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
+            samples = self._renormalise(samples)
 
             samples_cupy = cp.asarray(samples)
             log_prob_cupy = cp.asarray(log_prob)
@@ -152,4 +157,7 @@ class RV_base(nn.Module):
     def _log_prob(self, inputs):
         raise NotImplementedError()
 
+
+    def _renormalise(self, inputs):
+        raise NotImplementedError()
 

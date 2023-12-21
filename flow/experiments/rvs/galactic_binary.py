@@ -42,4 +42,8 @@ class GalacticBinary(RV_base):
                                               #  cp.log(self.param_max[0] - self.param_min[0])
         #log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
         return cp.asarray(log_prob) + log_prob_norm_forward
-                                                                            
+
+    def _renormalise(self, inputs):
+
+        inputs = self.param_min + (inputs + 1.0)*(self.param_max - self.param_min)/2.0
+        return inputs                                                                    
