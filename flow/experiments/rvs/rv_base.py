@@ -41,7 +41,7 @@ class RV_base(nn.Module):
         # Load min and max values to normalise back 
 
 
-    def load_fit(self, path_minmax):
+    def load_fit(self):
         """Load network that has been already fit to the distribution. 
         """
         # Size of the physical parameters
@@ -66,10 +66,10 @@ class RV_base(nn.Module):
 
         self.flow = flow
 
-    def set_min(param_min):
+    def set_min(self, param_min):
         self.param_min = self.dtype(param_min)
     
-    def set_max(param_max):
+    def set_max(self, param_max):
         self.param_max = self.dtype(param_max)
  
     def get_batchs(self, inputs: torch.tensor) -> torch.tensor:
