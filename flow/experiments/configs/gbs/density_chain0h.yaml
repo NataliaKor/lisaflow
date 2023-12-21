@@ -1,0 +1,61 @@
+# Config file for MBHB run. Vary only 2 parameters: m1 and m2.
+# Gaussian base distribution with resampling.
+# Data is generated on the fly.
+
+gpu: 0
+
+model:                                 # Properties of the model
+
+    base:                              # Base distribution
+      gaussian: 1                      # Type of the base distribution, can be either gaussian (1) or resampled (0) 
+      learn_mean_var: False            # Flag, if true, mean and variance of the distribution is learned
+      params: 8 # 6                        # Number of the physical parameters that we want to fit 
+    
+    acceptance_fn:                     # These parameters are only for the case when we use base resampling
+      # To be implemented
+
+    transform:
+      type: rq-coupling                # Type of the transform hlocks. At the moment use just one but should be extended to more in the future.
+      hidden_features: 256   # 256 # 128 # 512             
+      num_blocks: 4 # 4 # 10                   # Number of times the flow transformation is applied.
+      dropout: 0.2
+      batch_norm: 1
+      num_bins:  7  # 3
+      tail_bound:  5 # 3                    # Box is on [-bound, bound]^2 Can be from 1 to 5
+      unconditional_transform: False # True # False   # Apply unconditional transform
+      activation: relu # elu
+
+    affine:
+      hidden_features: 256
+      num_blocks: 2
+      dropout: 0.2
+      batch_norm: 1
+      activation: relu
+
+    flow:
+      num_flow_steps: 4 #6 # 12              # Number of times the flow transformation is applied
+
+training:
+
+    batch_size: 8192 # 32768 # 16384 # 8192                  # Batch size
+    epochs: 1001 #1000                       # Number of epochs
+    max_iter: 500                      # Number of iterations inside one ephoch, useful only when the data is created on the fly 
+    learning_rate: 2.e-4               # Initial learning rate.
+    anneal_learning_rate: 1            # Adjust learnng rate with the cosine annealing. 1 -- TRUE, 0 -- FALSE
+    num_training_steps: 1000           # Number of total training steps (important for annealing of the learning rate)
+    weight_decay: 1.e-5                # Parameter used in the optimiser
+    seed: 1                            # Seed for training run
+    grad_norm_clip_value: 5. #0            # Value by which to clip the norm of the gradient 
+    resume: 0                          # Resume training (1) or start from scratch (0).
+    checkpoints: checkpoint_1001.pt     # Path to the checkpoint from which we are going to resume the training
+
+samples:
+    path:  /sps/lisaf/natalia/github/lisaflow/flow/experiments/samples/GB/4mHzband/chain0h.npy
+saving:
+
+    save_root: /sps/lisaf/natalia/training_data/density/chain0h/
+    label: 0h
+
+plots:
+
+    label: 0h
