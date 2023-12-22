@@ -12,7 +12,7 @@ class NPYDataset(Dataset):
     def __init__(self, filename):
         'Initialisation'
         samples = np.load(filename)
-
+        print('samples = ', samples)
         samples[:,0] = np.log(samples[:,0])
         samples[:,1] = np.sign(samples[:,1])*np.log10(np.abs(samples[:,1]))
 
@@ -20,7 +20,7 @@ class NPYDataset(Dataset):
         self._samples_max = samples.max(axis=0)
  
         self.samples = 2.0*(samples - self._samples_min)/(self._samples_max - self._samples_min) - 1.0
-            
+      
     def __getitem__(self, index):
         'Generates one sample of data' 
         return self.samples[index,:]
@@ -31,7 +31,7 @@ class NPYDataset(Dataset):
 
     def plot_distribution(self):
         figure = corner.corner(self.samples)
-        plt.savefig('samples_f.png')
+        plt.savefig('samples_f_nonorm.png')
         plt.close()
 
     @property
