@@ -107,7 +107,7 @@ class RV_base(nn.Module):
                 num_sampl_small = 100000
                 modulo_part = num_samples % num_sampl_small
                 integer_part = num_samples // num_sampl_small
-                samples = self.flow.samples(num_sampl_small)
+                samples = self.flow.sample(num_sampl_small)
                 #samples, log_prob = self.flow.sample_and_log_prob(num_sampl_small)
                 #log_prob = torch.unsqueeze(log_prob, 1)
 
@@ -150,13 +150,10 @@ class RV_base(nn.Module):
             A cupy array of shape [input_size], the log probability of the inputs.
         """
         inputs = torch.as_tensor(inputs)
-        
         return self._log_prob(inputs)
-
 
     def _log_prob(self, inputs):
         raise NotImplementedError()
-
 
     def _renormalise(self, inputs):
         raise NotImplementedError()
