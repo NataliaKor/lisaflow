@@ -1,8 +1,6 @@
 # In the future create base class for fitting and sampling distributions.
 # TODO: Create base class for different ways to sample.
 import torch
-import cupy as cp
-import numpy as np
 from rv_base import RV_base
 
 class GalacticBinary(RV_base):
@@ -23,25 +21,26 @@ class GalacticBinary(RV_base):
             log probability of the inputs
         """
         # Make variable agnostic to be used on CPU/GPU
-        xp = cp.get_array_module(inputs_cupy)
+        # xp = cp.get_array_module(inputs_cupy)
         inputs = torch.as_tensor(inputs_cupy, device = self.dev)
         self.flow.eval()
         with torch.no_grad():
             #inputs = 2.0*(inputs - self.param_min)/(self.param_max - self.param_min) - 1.0
             inputs = 2.0*inputs - 1.0     
-
-            log_prob = self.flow.log_prob(inputs)
+      
+            log_prob = torch.zeros((inputs.shape[0],))
+            #log_prob = self.flow.log_prob(inputs)
             for (stind, endind, inputs_batch) in self.get_batchs(inputs):
                 log_prob[stind: endind] = self.flow.log_prob(inputs_batch)
 
             # Jacobian of the forward transform
             #log_prob_norm1_forward = cp.log(cp.log(10)) - cp.log(cp.power(10,inputs_nonorm[:,0])) + \
             #                                              cp.cos(inputs_nonorm[:,1])
-            log_prob_norm_forward = xp.log(8) #- cp.log(self.param_max[0] - self.param_min[0]) - \
+            log_prob_norm_forward = self.xp.log(8) #- cp.log(self.param_max[0] - self.param_min[0]) - \
                                               #  cp.log(self.param_max[1] - self.param_min[1]) - \
                                               #  cp.log(self.param_max[0] - self.param_min[0])
         #log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
-        return cp.asarray(log_prob) + log_prob_norm_forward
+        return self.xp.asarray(log_prob) + log_prob_norm_forward
 
     def _renormalise(self, inputs):
 
