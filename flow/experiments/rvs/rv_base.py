@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from flow.utils.torchutils import *
 from flow.distributions.normal import *
@@ -24,13 +25,15 @@ class RV_base(nn.Module):
             assert isinstance(self.config['gpu'], int)
             self.dev = f"cuda:{self.config['gpu']}"
             self.dtype = torch.cuda.FloatTensor
-            import cupy as xp
-            get_wrapper = cuda_get_wrapper
+            import cupy as cp
+            self.xp = cp
+            #get_wrapper = cuda_get_wrapper
         else:
             self.dev = "cpu"
             self.dtype = torch.FloatTensor
-            import numpy as xp
-            get_wrapper = std_get_wrapper
+            import numpy as np
+            self.xp = np
+            #get_wrapper = std_get_wrapper
 
         self.param_min = None
         self.param_max = None
@@ -84,10 +87,9 @@ class RV_base(nn.Module):
         
         batch_size = int(1e6)
         num_running = inputs.shape[0]
-        inds = xp.arange(0, num_running, batch_size)
+        inds = np.arange(0, num_running, batch_size)
         if inds[-1] != num_running - 1:
-            inds = xp.concatenate([inds, xp.array([num_running - 1])])
-
+            inds = np.concatenate([inds, np.array([num_running - 1])])
         for stind, endind in zip(inds[:-1], inds[1:]):
             yield stind, endind, inputs[stind:endind]
 
@@ -141,10 +143,9 @@ class RV_base(nn.Module):
             #samples = self.param_min + (samples + 1.0)*(self.param_max - self.param_min)/2.0
             samples = self._renormalise(samples)
 
-            samples_cupy = xp.asarray(samples)
             #log_prob_cupy = xp.asarray(log_prob)
 
-        return samples_cupy #, log_prob_cupy
+        return self.xp.asarray(samples) #, log_prob_cupy
 
 
     def log_prob(self, inputs):
