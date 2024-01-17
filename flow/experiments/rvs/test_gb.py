@@ -28,17 +28,22 @@ def main(parser):
 
     # Choose CPU or GPU
     if config['gpu'] is not None:
-        assert isinstance(self.config['gpu'], int)
+        assert isinstance(config['gpu'], int)
         import cupy as xp
         get_wrapper = cuda_get_wrapper
     else:
         import numpy as xp
         get_wrapper = std_get_wrapper
 
-    gb.set_min(xp.zeros(config['model']['base']['params']))
-    gb.set_max(xp.ones(config['model']['base']['params']))
+    path_minmax = '../minmax_gb_' + config['saving']['label'] + '.txt'
+    param_min, param_max = np.loadtxt(path_minmax)
+    gb.set_min(param_min)
+    gb.set_max(param_max)
 
-    samples = gb.sample(1000)
+    #gb.set_min(xp.zeros(config['model']['base']['params']))
+    #gb.set_max(xp.ones(config['model']['base']['params']))
+
+    samples = gb.sample(100000)
     log_prob = gb.log_prob(samples)
  
     # Plot samples to verify
@@ -49,11 +54,11 @@ def main(parser):
              quantiles=[0.68, 0.954, 0.997],
              color='blue',
              plot_density=True)
-    plt.savefig('samples_chain0c.png')
+    plt.savefig('samples_5.png')
     plt.close()
 
     # Save samples to npy file
-    #np.save('samples_ZTFJ1539_1000_1e5samp.npy', samples_np)
+    np.save('samples_ZTFJ1539_5_1e5samp.npy', get_wrapper(samples))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description = 'sample galaxy')

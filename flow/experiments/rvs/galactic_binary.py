@@ -25,8 +25,7 @@ class GalacticBinary(RV_base):
         inputs = torch.as_tensor(inputs_cupy, device = self.dev)
         self.flow.eval()
         with torch.no_grad():
-            #inputs = 2.0*(inputs - self.param_min)/(self.param_max - self.param_min) - 1.0
-            inputs = 2.0*inputs - 1.0     
+            inputs = 2.0*(inputs - self.param_min)/(self.param_max - self.param_min) - 1.0   
       
             log_prob = torch.zeros((inputs.shape[0],))
             #log_prob = self.flow.log_prob(inputs)
@@ -36,9 +35,9 @@ class GalacticBinary(RV_base):
             # Jacobian of the forward transform
             #log_prob_norm1_forward = cp.log(cp.log(10)) - cp.log(cp.power(10,inputs_nonorm[:,0])) + \
             #                                              cp.cos(inputs_nonorm[:,1])
-            log_prob_norm_forward = self.xp.log(8) #- cp.log(self.param_max[0] - self.param_min[0]) - \
-                                              #  cp.log(self.param_max[1] - self.param_min[1]) - \
-                                              #  cp.log(self.param_max[0] - self.param_min[0])
+            log_prob_norm_forward = self.xp.log(8) - self.xp.log(self.param_max[0] - self.param_min[0]) - \
+                                                     self.xp.log(self.param_max[1] - self.param_min[1]) - \
+                                                     self.xp.log(self.param_max[0] - self.param_min[0])
         #log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
         return self.xp.asarray(log_prob) + log_prob_norm_forward
 
