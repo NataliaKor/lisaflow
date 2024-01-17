@@ -15,12 +15,13 @@ from torch.nn.utils import clip_grad_norm_
 from flow.utils.monitor_progress import *
 from flow.utils.torchutils import *
 from flow.distributions.normal import *
+from flow.distributions.uniform import *
 from flow.distributions.resample import *
 from flow.networks.mlp import MLP
 
 from flow_architecture_density_small import *
 from torch.utils.data import DataLoader
-from data_loader import NPYDataset 
+from data_loader_1gb import NPYDataset 
 
 import time
 
@@ -29,7 +30,7 @@ def main(parser):
     # Parse command line arguments
     parser.add_argument('--config', type=str, default='configs/gbs/density_1gb_small.yaml',
                         help='Path to config file specifying model architecture and training procedure')
-    parser.add_argument('--resume', type=int, default=1, help='Flag whether to resume training')
+    parser.add_argument('--resume', type=int, default=0, help='Flag whether to resume training')
 
     args = parser.parse_args()
 
@@ -71,7 +72,19 @@ def main(parser):
     features_size = config['model']['base']['params']
     print('features_size = ', features_size)
     # Define base distribution. At the moment there are 2 options: 
-    distribution = StandardNormal((features_size,)).to(dev)
+    #distribution = StandardNormal((features_size,)).to(dev)
+    # Define base distribution. At the moment there are 2 options: 
+    if config['model']['base']['gaussian'] == 1:
+        distribution = StandardNormal((features_size,)).to(dev)
+    else:
+        acceptance_fn = MLP(
+        in_shape = [features_size],
+        out_shape = [1],
+        hidden_sizes = [512, 512],
+        activation = F.leaky_relu,
+        activate_output = True,
+        activation_output = torch.sigmoid)
+        distribution = ResampledGaussian((features_size,), acceptance_fn, T = 250).to(dev)
     transform = create_transform(config).to(dev)
 
     flow = Flow(transform, distribution).to(dev)
@@ -107,6 +120,7 @@ def main(parser):
     # Load here the labels of parameters
     param_min = dataset_gb.samples_min
     param_max = dataset_gb.samples_max
+    np.savetxt('minmax_gb_' + config['saving']['label'] + '.txt', (param_min, param_max))
     ################################################################
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # In this case there is no validation data!!! 
@@ -115,13 +129,12 @@ def main(parser):
     # EPOCHS 
     for j0 in range(number_epochs):
 
-        start_epoch = time.time()
-
         j = j0 + last_epoch + 1
-        print('j = ', j)
+        #print('j = ', j)
    
         flow.train()
 
+        start_epoch = time.time()
         for i, params_cpu in enumerate(loader):
 
             params = torch.as_tensor(params_cpu).type(dtype)
@@ -138,12 +151,12 @@ def main(parser):
             # Check if we need to switch the optimiser
             #switch_optim() 
 
-            print('i = ', i, 'loss = %.3f' % loss)
+            #print('i = ', i, 'loss = %.3f' % loss)
             # Output current value of the learning rate
-            for param_group in optimizer.param_groups:
-                print( param_group['lr'])
+            #for param_group in optimizer.param_groups:
+            #    print( param_group['lr'])
 
-            gc.collect()
+            #gc.collect()
 
         end_epoch = time.time()
       
@@ -155,12 +168,13 @@ def main(parser):
 
         # Save checkpoints and loss for every epoch
         checkpoint_path = config['saving']['save_root'] + 'checkpoint_{}.pt'.format(str(j+1))
+        #if j % 100 == 0:
         torch.save({
-           'epoch': j,
-           'model_state_dict': flow.state_dict(),
-           'optimizer_state_dict': optimizer.state_dict(),
-           'scheduler': scheduler.state_dict(),
-           'loss': loss,}, checkpoint_path)
+             'epoch': j,
+             'model_state_dict': flow.state_dict(),
+             'optimizer_state_dict': optimizer.state_dict(),
+             'scheduler': scheduler.state_dict(),
+             'loss': loss,}, checkpoint_path)
         np.savetxt(config['saving']['save_root'] + 'losses_' + config['saving']['label'] + '.txt', losses)
 
         if anneal_learning_rate:
@@ -176,7 +190,6 @@ def main(parser):
 
             print('Do corner plot')
             # TODO check what are the values of the truths and coeff_true
-            #make_cp_density_estimation_01(flow, j, parameter_labels, label)
             make_cp_density_estimation_minus1(flow, j, parameter_labels, param_min, param_max, label, filename)
             # For this purposes we need to create different pp-plot, where we check for the transformed distribution 
             # how many points were created and if they are whithin the countour they should be in

@@ -12,11 +12,14 @@ class NPYDataset(Dataset):
     def __init__(self, filename):
         'Initialisation'
         self.samples = np.load(filename)
-        #self._samples_min = self.samples.min(axis=0)[:-1]
-        #self._samples_max = self.samples.max(axis=0)[:-1]
+        self._samples_min = self.samples.min(axis=0)[:-1]
+        self._samples_max = self.samples.max(axis=0)[:-1]
 
-        self._samples_min = 0.0
-        self._samples_max = 1.0
+        # Write down the values to the file
+        # np.savetxt('minmax_gb.txt', (param_min, param_max))
+
+        #self._samples_min = 0.0
+        #self._samples_max = 1.0
            
     def __getitem__(self, index):
         'Generates one sample of data' 
