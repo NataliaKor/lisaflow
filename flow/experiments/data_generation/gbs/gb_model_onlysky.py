@@ -87,33 +87,79 @@ class GB_gpu(Source):
         '''
     
         check_prior_on_as = False
+
+        sampling_parameters = xp.empty((N,0))
+        self.parameter_labels = []
        
         # Intrinsic parameters
-        f0_min = self.f0 - self.num_f*self.df
-        f0_max = self.f0 + self.num_f*self.df
-         
-        f0 =   xp.random.uniform(f0_min, f0_max, N) # Sample straight away in cupy
-        fdot = xp.random.uniform(self.config_data['limits']['min']['fdot'], self.config_data['limits']['max']['fdot'], N)
-            
+        if self.config_data['estimate']['f0']:
+            f0_min = self.f0 - self.num_f*self.df
+            f0_max = self.f0 + self.num_f*self.df
+            f0 =   xp.random.uniform(f0_min, f0_max, N) # Sample straight away in cupy
+            f0_dim = xp.expand_dims(f0, axis = 1)
+            sampling_parameters = xp.append(sampling_parameters, f0_dim, axis = 1)
+            self.parameter_labels.append('f0')
+        else:
+            f0 = xp.repeat(xp.array(self.config_data['default']['f0']),N)
+
+        if self.config_data['estimate']['fdot']:
+            fdot = xp.random.uniform(self.config_data['limits']['min']['fdot'], self.config_data['limits']['max']['fdot'], N)
+            fdot_dim = xp.expand_dims(fdot, axis = 1)
+            sampling_parameters = xp.append(sampling_parameters, fdot_dim, axis = 1)
+            self.parameter_labels.append('fdot')
+        else:
+            fdot = xp.repeat(xp.array(self.config_data['default']['fdot']),N)          
+
         beta_sin = xp.random.uniform(self.config_data['limits']['min']['beta_sin'], self.config_data['limits']['max']['beta_sin'], N)
         beta = xp.arcsin(beta_sin)
+        beta_sin_dim = xp.expand_dims(beta_sin,axis = 1)
 
-        lam = xp.random.uniform(self.config_data['limits']['min']['lam'], self.config_data['limits']['max']['lam'] * xp.pi, N) # np.pi
+        sampling_parameters = xp.append(sampling_parameters, beta_sin_dim, axis = 1)
+        self.parameter_labels.append('sbeta')
+ 
+        lam = xp.random.uniform(self.config_data['limits']['min']['lam'] * xp.pi , self.config_data['limits']['max']['lam'] * xp.pi, N) # np.pi
+        lam_dim = xp.expand_dims(lam, axis = 1) 
+        sampling_parameters = xp.append(sampling_parameters, lam_dim, axis = 1)
+        self.parameter_labels.append('lam')
+ 
 
         if self.sample_physical == True:
+            if self.config_data['estimate']['amp']:
+                amp = xp.random.uniform(self.config_data['limits']['min']['amp'], self.config_data['limits']['max']['amp'], N)
+                sampling_parameters = xp.vstack((sampling_parameters, amp))
+                self.parameter_labels.append('amp') 
+            else: 
+                amp = xp.repeat(xp.array(self.config_data['default']['amp']),N)
 
-            amp = xp.random.uniform(self.config_data['limits']['min']['amp'], self.config_data['limits']['max']['amp'], N)
+            if self.config_data['estimate']['iota']:
+                iota_cos = xp.random.uniform(self.config_data['limits']['min']['iota_cos'], self.config_data['limits']['max']['iota_cos'], N)
+                iota = xp.arccos(iota_cos)
+                sampling_parameters = xp.vstack((sampling_parameters, iota))
+                self.parameter_labels.append('iota') 
+            else:
+                iota = xp.repeat(xp.array(self.config_data['default']['iota']),N)
+                iota_cos = xp.cos(iota)
 
-            iota_cos = xp.random.uniform(self.config_data['limits']['min']['iota_cos'], self.config_data['limits']['max']['iota_cos'], N)
-            iota = xp.arccos(iota_cos)
+            if self.config_data['estimate']['phi0']: 
+                phi0 = xp.random.uniform(self.config_data['limits']['min']['phi0'], self.config_data['limits']['max']['phi0'] * xp.pi, N)  # np.pi
+                sampling_parameters = xp.vstack((sampling_parameters, phi0)) 
+                self.parameter_labels.append('phi0') 
+            else:
+                phi0 = xp.repeat(xp.array(self.config_data['default']['phi0']),N)
 
-            phi0 = xp.random.uniform(self.config_data['limits']['min']['phi0'], self.config_data['limits']['max']['phi0'] * xp.pi, N)  # np.pi
-            psi =  xp.random.uniform(self.config_data['limits']['min']['psi'] * xp.pi, self.config_data['limits']['max']['psi'] * xp.pi, N)    # np.pi
-    
+            if self.config_data['estimate']['psi']:
+                psi = xp.random.uniform(self.config_data['limits']['min']['psi'] * xp.pi, self.config_data['limits']['max']['psi'] * xp.pi, N)    # np.pi
+                sampling_parameters = xp.vstack((sampling_parameters, psi))
+                self.parameter_labels.append('psi')
+            else:
+                psi = xp.repeat(xp.array(self.config_data['default']['psi']),N) 
+                
             ffdot = xp.zeros(N) 
             self.params0 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi, lam, beta]) # Check if it matters if it is phi0 or -phi0
             # Construct batch of paramaters fro sampling
-            sampling_parameters = xp.vstack((f0, fdot, beta_sin, lam, iota_cos, amp, phi0, psi)).T
+
+            #sampling_parameters = sampling_parameters.T
+            #sampling_parameters = xp.vstack((f0, fdot, beta_sin, lam, iota_cos, amp, phi0, psi)).T
 
         else:
 
@@ -179,10 +225,10 @@ class GB_gpu(Source):
                 print('self.parameters_mean = ', self.parameters_mean)
                 self.parameters_std = np.std(sampling_parameters, axis=0)
                 print('self.parameters_std = ', self.parameters_std)
-                if self.sample_physical == True:
-                    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'iota_cos', 'amp', 'phi0', 'psi']
-                else:
-                    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'a1', 'a2', 'a3', 'a4']
+                #if self.sample_physical == True:
+                #    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'iota_cos', 'amp', 'phi0', 'psi']
+                #else:
+                #    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'a1', 'a2', 'a3', 'a4']
 
                 np.savetxt('means' + self.config['saving']['label'] + '.txt' , self.parameters_mean.get())
                 np.savetxt('stds' + self.config['saving']['label'] + '.txt', self.parameters_std.get())
@@ -191,10 +237,10 @@ class GB_gpu(Source):
                 self.parameters_mean = xp.loadtxt('means' + self.config['saving']['label'] + '.txt')
                 self.parameters_std = xp.loadtxt('stds' + self.config['saving']['label'] + '.txt')
         
-                if self.sample_physical == True:
-                    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'iota_cos', 'amp', 'phi0', 'psi']
-                else:
-                    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'a1', 'a2', 'a3', 'a4']
+                #if self.sample_physical == True:
+                #    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'iota_cos', 'amp', 'phi0', 'psi']
+                #else:
+                #    self.parameter_labels = ['f0', 'fdot', 'beta_sin', 'lam', 'a1', 'a2', 'a3', 'a4']
 
         # Return the set of standardised parameters to sample
         self.param_batch = (sampling_parameters - self.parameters_mean) / self.parameters_std
@@ -355,7 +401,8 @@ class GB_gpu(Source):
         params = np.array([amp, f0, fdot, 0.0, -phi0, iota, psi, lam, beta])
 
         if self.sample_physical == True:
-            truths = np.array([f0, fdot, np.sin(beta), lam, np.cos(iota), amp, phi0, psi])
+            truths = np.array((f0, fdot, np.sin(beta), lam))
+            #truths = np.array([f0, fdot, np.sin(beta), lam, np.cos(iota), amp, phi0, psi])
 
         else:
             a1, a2, a3, a4 = transform_params(torch.as_tensor(amp).type(self.dtype), \
@@ -396,61 +443,3 @@ class GB_gpu(Source):
         # Have to check if this thing and stuff that goes as input to the network is the same
   
         return A_white, E_white, truths
-
-
-    def check_waveforms(self, beta, lam, index):
-        '''
-          "True" data for testing. Dataset with the default parameters.
-        '''
-        amp = self.config_data['default']['amp']
-        f0 = self.config_data['default']['f0']
-        fdot = self.config_data['default']['fdot']
-
-        phi0 = self.config_data['default']['phi0']
-        iota = self.config_data['default']['iota']
-        psi = self.config_data['default']['psi']
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - phi0
-        params = np.array([amp, f0, fdot, 0.0, -phi0, iota, psi, lam, beta])
-
-        a1, a2, a3, a4 = transform_params(torch.as_tensor(amp).type(self.dtype), \
-                                          torch.as_tensor(np.cos(iota)).type(self.dtype), \
-                                          torch.as_tensor(phi0).type(self.dtype), \
-                                          torch.as_tensor(psi).type(self.dtype))
-
-        print('type(beta) = ', type(beta))
-        print('type(lam) = ', type(lam))
-        truths = np.array([f0, fdot, np.sin(beta), lam, a1.cpu().detach().numpy(), a2.cpu().detach().numpy(), a3.cpu().detach().numpy(), a4.cpu().detach().numpy()], dtype=np.float64)
-       
-        # Create waveform
-        gb = GBGPU(use_gpu=True)
-        gb.run_wave(*params, N = self.num_f, dt = self.dt, T = self.Tobs, oversample = 2)#oversample=2)
-
-        A_out = xp.zeros((1, self.num), dtype=xp.complex128)
-        E_out = xp.zeros((1, self.num), dtype=xp.complex128)
-
-        i_start = (gb.start_inds.get() - self.k_min).astype(np.int32)
-        i_end = (gb.start_inds.get() - self.k_min + gb.N).astype(np.int32)
-
-        A_out[0, i_start[0] : i_end[0]] = gb.A
-        E_out[0, i_start[0] : i_end[0]] =  gb.E
-
-        noise = AnalyticNoise(self.freqs, 'MRDv1')
-        noisevals_A, noisevals_E = noise.psd(option="A"), noise.psd(option="E")
-
-        noiseA = sample_noise(noisevals_A, self.df, self.dt, batch_size, num)#, A_out.shape)
-        noiseE = sample_noise(noisevals_E, self.df, self.dt, batch_size, num)#, E_out.shape)
-#        noiseE = sample_noise(xp.array(noisevals_E), self.df, self.dt, batch_size, num)#, E_out.shape)
-
-        A_white = (A_out + noiseA) * xp.sqrt(4.0*self.df)*self.dt*self.dt/xp.sqrt(xp.array(noisevals_A)) # !!!! TWO TIMES MULTIPLY BY dt
-        E_white = (E_out + noiseE) * xp.sqrt(4.0*self.df)*self.dt*self.dt/xp.sqrt(xp.array(noisevals_E))  # !!!! TWO TIMES MULTIPLY BY dt
-  
-#        E_white = (E_out + noiseE) * xp.sqrt(4.0*self.df)*self.dt*self.dt/xp.sqrt(xp.array(noisevals_E))  # !!!! TWO TIMES MULTIPLY BY dt
-     
-        # Have to check if this thing and stuff that goes as input to the network is the same
-        #plt.figure()
-        #plt.loglog(np.abs(A_white[0,:].get()))
-        #plt.savefig('A_' + str(index) + '.png') 
-        #plt.close()
-
-        return A_white, E_white, truths
-
