@@ -2,7 +2,7 @@
 Train the network with the simple chirplet model.
 Create data on the fly.
 """
-from data_generation.gbs.gb_model_VBs import GB_gpu
+from data_generation.gbs.gb_model_log_wf import GB_gpu
 
 import numpy as np
 import cupy as cp
@@ -121,11 +121,11 @@ def main(parser):
     config_data = get_config(args.config_data)
 
     # Set seed if needed
-    seed = None
-    if 'seed' in config['training'] and config['training']['seed'] is not None:
-        seed = config['training']['seed']
-    elif distributed:
-        seed = 0
+    #seed = None
+    #if 'seed' in config['training'] and config['training']['seed'] is not None:
+    #    seed = config['training']['seed']
+    #elif distributed:
+    #    seed = 0
     #if seed is not None:
 
     ###############################################################################
@@ -155,7 +155,7 @@ def main(parser):
     # Prepare training data 
     batch_size = config['training']['batch_size']
     number_epochs = config['training']['epochs']  
-    number_iterations = config['training']['max_iter']
+    number_iterations =  config['training']['max_iter']
     grad_norm_clip_value = config['training']['grad_norm_clip_value']
     anneal_learning_rate =  config['training']['anneal_learning_rate']
 
@@ -243,6 +243,7 @@ def main(parser):
  
 
     flow = Flow(transform, distribution, embedding_net).to(dev)    
+    #flow = Flow(transform, distribution).to(dev)
 
     #########################################################################################################################
     # Set optimisers and schedulers
@@ -282,7 +283,7 @@ def main(parser):
     #A, E = gb.freqwave_AET(500000)
     gb.sample_from_prior(10000, 0)
     #gb.initialise_freq_vector()
-    A, E = gb.create_waveform() 
+    A, E = gb.create_waveform(0) 
  
     plt.figure()
     plt.plot(np.abs(A[1,:].get()))
@@ -295,29 +296,36 @@ def main(parser):
     plt.savefig('whiA.png')
     plt.close()
  
-    max_Ar_batch = cp.amax(cp.real(A))
-    max_Er_batch = cp.amax(cp.real(E))
-    max_Aim_batch = cp.amax(cp.imag(A))
-    max_Eim_batch  = cp.amax(cp.imag(E))
+    max_Ar_batch = cp.amax(cp.abs(cp.real(A)))
+    max_Er_batch = cp.amax(cp.abs(cp.real(E)))
+    max_Aim_batch = cp.amax(cp.abs(cp.imag(A)))
+    max_Eim_batch  = cp.amax(cp.abs(cp.imag(E)))
 
-    max_batch = 150.0 # 100.0
+    #max_batch = 2000.0 # 150.0 # 100.0
 
-    min_Er_batch = cp.amin(cp.real(E))
-    min_Aim_batch = cp.amin(cp.imag(A))
-    min_Eim_batch  = cp.amin(cp.imag(E))
-    min_Ar_batch = cp.amin(cp.real(A))
+    #min_Er_batch = cp.amin(cp.real(E))
+    #min_Aim_batch = cp.amin(cp.imag(A))
+    #min_Eim_batch  = cp.amin(cp.imag(E))
+    #min_Ar_batch = cp.amin(cp.real(A))
 
-    print('max_Ar_batch = ', max_Ar_batch)
-    print('min_Ar_batch = ', min_Ar_batch)
-    print('max_Er_batch = ', max_Er_batch)   
-    print('max_Aim_batch = ', max_Aim_batch)
-    print('max_Eim_batch = ', max_Eim_batch)
-    print('min_Er_batch = ', min_Er_batch)   
-    print('min_Aim_batch = ', min_Aim_batch)
-    print('min_Eim_batch = ', min_Eim_batch)
+    #print('max_Ar_batch = ', max_Ar_batch)
+    #print('min_Ar_batch = ', min_Ar_batch)
+    #print('max_Er_batch = ', max_Er_batch)   
+    #print('max_Aim_batch = ', max_Aim_batch)
+    #print('max_Eim_batch = ', max_Eim_batch)
+    #print('min_Er_batch = ', min_Er_batch)   
+    #print('min_Aim_batch = ', min_Aim_batch)
+    #print('min_Eim_batch = ', min_Eim_batch)
  
+    #max_batch = cp.max(cp.abs(cp.array([min_Er_batch, max_Er_batch, min_Ar_batch, max_Ar_batch, 
+    #                                   min_Eim_batch, max_Eim_batch, min_Aim_batch, max_Aim_batch])))
 
+    max_batch = cp.max(cp.array([max_Er_batch, max_Ar_batch, max_Eim_batch, max_Aim_batch]))
+ 
+    print('max_batch = ', max_batch)
 
+    #max_batch = max_batch + 100;
+    #print('max_batch = ', max_batch)
     #maxE = cp.sqrt(max_Er_batch**2 + max_Eim_batch**2)/cp.sqrt(2.0*dt)
 
     #print('maxA = ',
@@ -329,6 +337,15 @@ def main(parser):
     param_std_cp = gb.get_param_std()
     param_mean = torch.as_tensor(param_mean_cp).type(dtype)
     param_std = torch.as_tensor(param_std_cp).type(dtype)
+
+    #Ar_mean_cp, Er_mean_cp, Aim_mean_cp, Eim_mean_cp = gb.get_wf_mean()
+    #Ar_std_cp, Er_std_cp, Aim_std_cp, Eim_std_cp = gb.get_wf_std()
+
+    #print('Ar_mean_cp = ', Ar_mean_cp)
+    #print('Ar_std_cp = ', Ar_std_cp)
+
+    #Ar_mean, Er_mean, Aim_mean, Eim_mean = torch.as_tensor(Ar_mean_cp).type(dtype)
+    #Ar_std, Er_std, Aim_std, Eim_std = torch.as_tensor(param_std_cp).type(dtype)
 
     freqs = (gb.get_freqs() - param_mean_cp[0]) / param_std_cp[0]
 
@@ -343,10 +360,10 @@ def main(parser):
         lambd = config_data['default']['lam']
         beta = -config_data['default']['beta']
         A, E, truths = gb.check_waveforms(beta, lambd, index)
-        waveform = torch.cat((torch.as_tensor(cp.real(A)/max_batch).type(dtype),
-                              torch.as_tensor(cp.real(E)/max_batch).type(dtype),
-                              torch.as_tensor(cp.imag(A)/max_batch).type(dtype),
-                              torch.as_tensor(cp.imag(E)/max_batch).type(dtype))) #,  freqs_one), 1)
+        waveform = torch.cat((torch.as_tensor((cp.real(A) - Ar_mean_cp)/Ar_std_cp).type(dtype),
+                              torch.as_tensor((cp.real(E) - Er_mean_cp)/Er_std_cp).type(dtype),
+                              torch.as_tensor((cp.imag(A) - Aim_mean_cp)/Aim_std_cp).type(dtype),
+                              torch.as_tensor((cp.imag(E) - Eim_mean_cp)/Eim_std_cp).type(dtype))) #,  freqs_one), 1)
             
         waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1)) 
         #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
@@ -367,18 +384,37 @@ def main(parser):
         for i in range(number_iterations):
 
             gb.sample_from_prior(batch_size, 1)
-            A, E = gb.create_waveform()
+            A, E = gb.create_waveform(1)
          
             param = torch.as_tensor(gb.get_params()).type(dtype)
-            test = torch.as_tensor(cp.real(A)/max_batch).type(dtype).view(batch_size, 1, -1)     
-           
+            #test = torch.as_tensor(cp.real(A)/max_batch).type(dtype).view(batch_size, 1, -1)     
+    
+            #print('param = ', param)
+       
             waveform = torch.cat((torch.as_tensor(cp.real(A)/max_batch).type(dtype).view(batch_size, -1), 
-                                  torch.as_tensor(cp.real(E)/max_batch).type(dtype).view(batch_size, -1), 
-                                  torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(batch_size, -1), 
-                                  torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(batch_size, -1)), 1)#, freqs_arr), 1)
+                                   torch.as_tensor(cp.real(E)/max_batch).type(dtype).view(batch_size, -1), 
+                                   torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(batch_size, -1), 
+                                   torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(batch_size, -1)), 1)#, freqs_arr), 1)
             
-            print('torch.max(waveform) = ', torch.max(waveform))
-            print('torch.min(waveform) = ', torch.min(waveform)) 
+            #waveform = torch.cat((torch.as_tensor((cp.real(A) - Ar_mean_cp)/Ar_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.real(E) - Er_mean_cp)/Er_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.imag(A) - Aim_mean_cp)/Aim_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.imag(E) - Eim_mean_cp)/Eim_std_cp).type(dtype).view(batch_size, -1)), 1)
+            #print('torch.max(waveform) = ', torch.max(waveform))
+            #print('torch.min(waveform) = ', torch.min(waveform)) 
+    
+            #print('cp.real(A) = ',  cp.real(A))
+
+            test = cp.real(A).get()/max_batch.get()
+            #print(test.shape)
+            plt.figure()
+            plt.plot(test[0,:])
+            plt.plot(test[1,:])
+            plt.savefig('wf.png')
+
+            exit()
+            #print((cp.real(A) - Ar_mean_cp)/Ar_std_cp)
+            
           
             waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1))
             #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
@@ -406,7 +442,7 @@ def main(parser):
         gc.collect()
 
         # Save checkpoints and loss for every epoch
-        checkpoint_path = config['saving']['save_root'] + 'checkpoint_{}.pt'.format(str(j+1))
+        checkpoint_path = config['saving']['save_root'] + 'checkpoint' + config['saving']['label'] + '_{}.pt'.format(str(j+1))
         torch.save({
            'epoch': j,
            'model_state_dict': flow.state_dict(),
@@ -426,13 +462,18 @@ def main(parser):
 
             # This function has to pass a combination of A and E
             gb.sample_from_prior(batch_size, 1)
-            A, E = gb.create_waveform()
+            A, E = gb.create_waveform(1)
             param = torch.as_tensor(gb.get_params()).type(dtype)
             waveform = torch.cat((torch.as_tensor(cp.real(A)/max_batch).type(dtype).view(batch_size, -1), 
                                   torch.as_tensor(cp.real(E)/max_batch).type(dtype).view(batch_size, -1), 
                                   torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(batch_size, -1), 
                                   torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(batch_size, -1)),1)#, freqs_arr), 1)
- 
+
+            #waveform = torch.cat((torch.as_tensor((cp.real(A) - Ar_mean_cp)/Ar_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.real(E) - Er_mean_cp)/Er_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.imag(A) - Aim_mean_cp)/Aim_std_cp).type(dtype).view(batch_size, -1),
+            #                  torch.as_tensor((cp.imag(E) - Eim_mean_cp)/Eim_std_cp).type(dtype).view(batch_size, -1)), 1)
+
             waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1))
             #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
           
@@ -458,6 +499,11 @@ def main(parser):
                                   torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(1, -1), 
                                   torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(1, -1)),1)#, freqs_one), 1)
 
+            #waveform = torch.cat((torch.as_tensor((cp.real(A) - Ar_mean_cp)/Ar_std_cp).type(dtype).view(1, -1),
+            #                  torch.as_tensor((cp.real(E) - Er_mean_cp)/Er_std_cp).type(dtype).view(1, -1),
+            #                  torch.as_tensor((cp.imag(A) - Aim_mean_cp)/Aim_std_cp).type(dtype).view(1, -1),
+            #                  torch.as_tensor((cp.imag(E) - Eim_mean_cp)/Eim_std_cp).type(dtype).view(1, -1)), 1)
+ 
            
             waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1))
             #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
@@ -468,8 +514,13 @@ def main(parser):
             percentiles = np.empty((neval, features_size))
             print('Do corner plot')
             # TODO check what are the values of the truths and coeff_true
-
-            make_cp_as_std(flow, j, parameter_labels, param_mean, param_std, waveform_cnn, truths, label)
+  
+            filename_sample = config['samples']['path']
+            amp_sample = config_data['default']['amp']
+            freq_sample_min = config_data['limits']['min']['fsamp']
+            freq_sample_max = config_data['limits']['max']['fsamp']   
+            make_cp_compare_samples_gb(flow, j, parameter_labels, param_mean, param_std, waveform_cnn, truths, label, filename_sample, amp_sample, freq_sample_min, freq_sample_max)
+                                     # flow, iteration, labels, param_mean, param_std, coeff_norm, truths, test_label, filename, amp_true, freq
 
             print('Do pp plot')
             for idx in tqdm(range(neval)):
@@ -477,7 +528,7 @@ def main(parser):
                 # This function has to pass a combination of A and E
                 # Check if 'num_samples' works here correctly
                 gb.sample_from_prior(1, 1)
-                A, E = gb.create_waveform()
+                A, E = gb.create_waveform(1)
                 param = torch.as_tensor(gb.get_params()).type(dtype)
 
                 freqs_samp = torch.as_tensor(cp.tile(freqs,(num_samples, 1))).type(dtype).view(1, -1) 
@@ -485,6 +536,12 @@ def main(parser):
                                       torch.as_tensor(cp.real(E)/max_batch).type(dtype).view(1, -1), 
                                       torch.as_tensor(cp.imag(A)/max_batch).type(dtype).view(1, -1), 
                                       torch.as_tensor(cp.imag(E)/max_batch).type(dtype).view(1,  -1)),1)#, freqs_one), 1)
+
+#                waveform = torch.cat((torch.as_tensor((cp.real(A) - Ar_mean_cp)/Ar_std_cp).type(dtype).view(1, -1),
+#                              torch.as_tensor((cp.real(E) - Er_mean_cp)/Er_std_cp).type(dtype).view(1, -1),
+#                              torch.as_tensor((cp.imag(A) - Aim_mean_cp)/Aim_std_cp).type(dtype).view(1, -1),
+#                              torch.as_tensor((cp.imag(E) - Eim_mean_cp)/Eim_std_cp).type(dtype).view(1, -1)), 1)
+ 
 
                 waveform_cnn = torch.reshape(waveform, (waveform.shape[0], -1))
                 #waveform_cnn = torch.reshape(waveform, (waveform.shape[0], embed_in, 1, -1))
