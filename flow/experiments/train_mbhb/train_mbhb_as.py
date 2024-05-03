@@ -382,7 +382,7 @@ def main(parser):
             coeff = torch.matmul(mbhb_ts + noise_samples, Vts_reduce) 
             #noise_samples = torch.randn(coeff.shape).type(dtype)
             coeff_scale = coeff/Sts_reduce 
-
+            print('coeff_scale = ', coeff_scale)
             #plt.figure()
             #plt.plot((mbhb_ts[0,:] + noise_samples[0,:]).cpu().detach().numpy())
             #plt.savefig('mbhb_noise_test0.png')
