@@ -17,12 +17,21 @@ def cuda_get_wrapper(arg):
 def main(parser):
 
     # Parse command line arguments
-    parser.add_argument('--config', type=str, default='../configs/gbs/density_chain0c.yaml',
+    parser.add_argument('--config', type=str, default='../configs/gbs/density/density_chain0c.yaml',
                         help='Path to config file specifying model architecture and training procedure')
     args = parser.parse_args()
 
     gb = GalacticBinary(args.config)
-    gb.load_fit()
+    
+    # Choose if we train the network or load trained weights
+    train == False
+    if train: 
+        # Train the network 
+        gb.fit()
+    else:
+        # Load trained network
+        gb.load_fit()
+
     # Set ranges of the distribution
     config = get_config(args.config)
 
@@ -35,15 +44,17 @@ def main(parser):
         import numpy as xp
         get_wrapper = std_get_wrapper
 
-    path_minmax = '../minmax_gb_' + config['saving']['label'] + '.txt'
+    # Load parameters to renormalise samples back to physical range
+    path_minmax = config['saving']['save_root'] + 'minmax_' + config['saving']['label'] + '.txt'
     param_min, param_max = np.loadtxt(path_minmax)
     gb.set_min(param_min)
     gb.set_max(param_max)
 
-    #gb.set_min(xp.zeros(config['model']['base']['params']))
-    #gb.set_max(xp.ones(config['model']['base']['params']))
+    # Define how many samples you want to produce
+    num_samples = 10000
+    samples = gb.sample(num_samples)
 
-    samples = gb.sample(100000)
+    # Estimale log probabilities for the samples
     log_prob = gb.log_prob(samples)
  
     # Plot samples to verify
@@ -54,11 +65,11 @@ def main(parser):
              quantiles=[0.68, 0.954, 0.997],
              color='blue',
              plot_density=True)
-    plt.savefig('samples_5.png')
+    plt.savefig('samples.png')
     plt.close()
 
     # Save samples to npy file
-    np.save('samples_ZTFJ1539_5_1e5samp.npy', get_wrapper(samples))
+    np.save('samples.npy', get_wrapper(samples))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description = 'sample galaxy')
