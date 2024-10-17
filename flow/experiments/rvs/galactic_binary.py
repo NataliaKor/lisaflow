@@ -35,9 +35,12 @@ class GalacticBinary(RV_base):
             # Jacobian of the forward transform
             #log_prob_norm1_forward = cp.log(cp.log(10)) - cp.log(cp.power(10,inputs_nonorm[:,0])) + \
             #                                              cp.cos(inputs_nonorm[:,1])
-            log_prob_norm_forward = self.xp.log(8) - self.xp.log(self.param_max[0] - self.param_min[0]) - \
-                                                     self.xp.log(self.param_max[1] - self.param_min[1]) - \
-                                                     self.xp.log(self.param_max[0] - self.param_min[0])
+            n_param = self.param_max.size(dim=0)
+            print('n_param = ', n_param)
+            log_prob_norm_forward = self.xp.log(self.xp.power(2.,n_param)) - self.xp.sum(self.xp.log(self.param_max)) - self.xp.sum(self.xp.log(self.param_min))
+                                                     #self.xp.log(self.param_max[0] - self.param_min[0]) - \
+                                                     #self.xp.log(self.param_max[1] - self.param_min[1]) - \
+                                                     #self.xp.log(self.param_max[2] - self.param_min[2])
         #log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
         return self.xp.asarray(log_prob) + log_prob_norm_forward
 
