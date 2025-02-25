@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-training_file = 'LDC2_sangria_training_v2.h5'
+training_file = '/sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/LDC2_sangria_training_v2.h5'
 fid = h5py.File(training_file)
 names_v = fid["sky/vgb/cat"].dtype.names
 names_d = fid["sky/dgb/cat"].dtype.names
@@ -44,12 +44,14 @@ fdot =  np.expand_dims(np.r_[params_d[5][:,0], params_i[5][:,0], params_v[10][:,
 parameters_sky = np.concatenate((amp, beta, lam), axis=1)
 parameters_f = np.concatenate((f0, fdot), axis=1)
 
+parameters_5 = np.concatenate((amp, beta, lam, f0, fdot), axis=1)
 
 
 # Save the dataset to a file
-np.save('galaxy_sky_dist.npy', parameters_sky)
-np.save('galaxy_f.npy', parameters_f)
+#np.save('galaxy_sky_dist.npy', parameters_sky)
+#np.save('galaxy_f.npy', parameters_f)
 
+np.save('galaxy_5.npy', parameters_5)
 
 
 #for i in np.arange(len(names_)):
