@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import corner
 
-
 def modpi(x):
+    print('type(x) = ', type(x))
     return torch.remainder(x, torch.pi)
 
 
@@ -56,90 +56,82 @@ def reconstruct_params(a1, a2, a3, a4):
     # !!!! Do not forget to renormalise the amplitude back
     return Amp, cosinc, psi, phi0
 
-def tramsform_params_mbhb(params, direction, injdist, dtype):
+def transform_params_mbhb(params, direction, injdist, dtype):
     '''
-    TAKE CARE OF THE PARAMETERS ORDER.
     This code is from Sylvain Marsat's lisabeta.
     Forward and inverse transformation.
     (Simple response 22)
+https://github.com/SylvainMarsat/lisabeta/blob/master/lisabeta/inference/inference.py
     '''
     
     if direction == 'forward':
         '''
         Transfrom from the physical parameters to the map parameters.
         '''
-        dist = params[0] 
-        inc = params[1]
-        phi = params[2]
-        lambda_a = params[3] - torch.pi/6
-        beta = params[4]
-        psi = params[5]
+        lambda_a = params['lam'] - np.pi/6
 
-        if (torch.any(dist<=0.) or torch.any(inc<0.) or torch.any(inc>torch.pi) or torch.any(beta<-torch.pi/2) or torch.any(beta>torch.pi/2)):
+        if (np.any(params['dist'] <= 0.) or np.any(params['inc'] < 0.) or np.any(params['inc'] > np.pi) or np.any(params['beta'] < -np.pi/2) or np.any(params['beta'] > np.pi/2)):
             raise ValueError('params are outside physical range.')
 
         # injdist is just the scale by which we can normalise distance
-        d = dist / injdist
-        tiota = torch.tan(inc/2)
-        ttheta = torch.tan(1./2 * (torch.pi/2 - beta))
-        rho = 1./(4*d) * torch.sqrt(5/torch.pi) * 1./(1+tiota**2)**2 * 1./(1+ttheta**2)**2
+        d = params['dist'] / injdist
+        tiota = np.tan(params['inc']/2)
+        ttheta = np.tan(1./2 * (np.pi/2 - params['beta']))
+        rho = 1./(4.*d) * np.sqrt(5./np.pi) * 1./(1. + tiota**2)**2 * 1./(1 + ttheta**2)**2
 
-        sigma_plus = rho*torch.exp(2*1j*phi) * (ttheta**4 * torch.exp(-2*1j*psi) + tiota**4 * torch.exp(2*1j*psi)) * torch.exp(-2*1j*lambda_a)
-        sigma_minus = rho*torch.exp(2*1j*phi) * (torch.exp(-2*1j*psi) + ttheta**4 * tiota**4 * torch.exp(2*1j*psi)) * torch.exp(2*1j*lambda_a)
+        sigma_plus = rho*np.exp(2.*1j*params['phi_ref']) * (ttheta**4 * np.exp(-2*1j*params['psi']) + tiota**4 * np.exp(2*1j*params['psi'])) * np.exp(-2*1j*lambda_a)
+        sigma_minus = rho*np.exp(2*1j*params['phi_ref']) * (np.exp(-2*1j*params['psi']) + ttheta**4 * tiota**4 * np.exp(2*1j*params['psi'])) * np.exp(2*1j*lambda_a)
 
-        if torch.jit.isinstance(psi, dtype):
-            indexpsi = torch.zeros(psi.shape, dtype = dtype)
-            indexpsi[modpi(psi) > torch.pi/2] = 1
+        if torch.jit.isinstance(params['psi'], dtype): # if torch.jit.isinstance(psi, dtype):
+            indexpsi = torch.zeros(params['psi'].shape, dtype = dtype)
+            indexpsi[modpi(params['psi']) > np.pi/2] = 1
         else:
-            if modpi(psi) <= torch.pi/2:
+            if modpi(params['psi']) <= np.pi/2:
                 indexpsi = 0
             else:
                 indexpsi = 1
 
-       
-        Aplus = torch.abs(sigma_plus)
-        Aminus = torch.abs(sigma_minus)
-        Phiplus = torch.angle(sigma_plus)
-        Phiminus = torch.angle(sigma_minus)
-        lambd = lambda_a + torch.pi/6
-        sbeta = torch.sin(beta)
+        params_map = {} 
+        params_map['Aplus'] = np.abs(sigma_plus)
+        params_map['Aminus'] = np.abs(sigma_minus)
+        params_map['Phiplus'] = np.angle(sigma_plus)
+        params_map['Phiminus'] = np.angle(sigma_minus)
+        params_map['lambda'] = lambda_a + np.pi/6
+        params_map['sbeta'] = np.sin(params['beta'])
         indexpsi = indexpsi
 
-        param_map = torch.tensor([Aplus, Aminus, Phiplus, Phiminus, lambd, sbeta, indexpsi])
-
-        #Lframe = True # keep track in which frame we are working
+        #params_map['frame'] = params[frame] # keep track in which frame we are working
 
         return params_map
 
 
     elif direction == 'inverse':
         '''
-        TAKE CARE OF PARAMETERS ORDER.
         Transfrom form the map parameters to the original parameters.
         '''
-        Aplus = params[0]
-        Aminus = params[1]
-        Phiplus = params[2]
-        Phiminus = params[3]
-        lambd = params[4]
-        sbeta = params[5]
-        indexpsi = params[6]
+        Aplus = params_map['Aplus']
+        Aminus = params_map['Aminus']
+        Phiplus = params_map['Phiplus']
+        Phiminus = params_map['Phiminus']
+        lambd = params_map['lambda']
+        sbeta = params_map['sbeta']
+        indexpsi = params_map['indexpsi']
 
-        if (torch.any(Aplus<=0.) or torch.any(Aminus<=0.) or torch.any(sbeta<-1.) or torch.any(sbeta>1.) or not torch.all((indexpsi==0) | (indexpsi==1))):
+        if (np.any(Aplus <= 0.) or np.any(Aminus <= 0.) or np.any(sbeta<-1.) or torch.any(sbeta>1.) or not torch.all((indexpsi==0) | (indexpsi==1))):
             raise ValueError('params_map are outside physical range.')
 
-        lambda_a = lambd - torch.pi/6
-        sigma_plus = Aplus * torch.exp(1j*Phiplus)
-        sigma_minus = Aminus * torch.exp(1j*Phiminus)
-        rtilde = sigma_plus / sigma_minus * torch.exp(4*1j*lambda_a)
+        lambda_a = lambd - np.pi/6
+        sigma_plus = Aplus * np.exp(1j*Phiplus)
+        sigma_minus = Aminus * np.exp(1j*Phiminus)
+        rtilde = sigma_plus / sigma_minus * np.exp(4*1j*lambda_a)
 
         ctheta = sbeta
         a = ((ctheta-1) / (ctheta+1))**2
         bz = (a - rtilde) / (a*rtilde - 1)
-        b = torch.abs(bz)
-        tiota2 = torch.sqrt(b)
+        b = np.abs(bz)
+        tiota2 = np.sqrt(b)
         ciota = (1 - tiota2) / (1 + tiota2)
-        fourpsi = torch.angle(bz)
+        fourpsi = np.angle(bz)
         # Ambiguity in psi: psi0 in [0, pi/2], psi1=psi0+pi/2 in [pi/2, pi]
         # We use indexpsi=[0,1] to represent this degeneracy
         psi0 = pytools.mod_interval(1./4*fourpsi, interval=[0, np.pi/2])
@@ -161,19 +153,16 @@ def tramsform_params_mbhb(params, direction, injdist, dtype):
         beta = np.arcsin(sbeta)
         inc = np.arccos(ciota)
 
-        #params = {}
-        #params['dist'] = d * injdist
-        #params['inc'] = inc
-        #params['phi'] = phi
-        #params['lambda'] = lambd
-        #params['beta'] = beta
-        #params['psi'] = psi
+        params = {}
+        params['dist'] = d * injdist
+        params['inc'] = inc
+        params['phi_ref'] = phi
+        params['lam'] = lambd
+        params['beta'] = beta
+        params['psi'] = psi
 
         #params['Lframe'] = params_map.get('Lframe', False)
-        param_map = np.array([d*injdist, inc, phi, lambd, lambd, beta, psi])
         return params
-
-
 
     else:
 
