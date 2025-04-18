@@ -1,0 +1,132 @@
+# Set of parameters:
+# for creating data with GPU based MBHB model. Data will be created on the fly.
+# Provide:
+#         - default parameters
+#         - parameter ranges
+#         - specify which parameters vary
+
+tvec:
+    dt:      10.0         # Cadence
+    Tobs:    604800.0     # Length of observation: 1 week
+
+frame: 'LISA' # TODO fix this, at the moment if I choose LISA, the truths will not be read correctly
+
+
+# The parameters to marginalise out. 
+# This means that we vary this parameter but do not estimate
+# If estimate is true this also has to be true
+margin:
+
+    f_ref:   0
+    phi_ref: 0
+    t_ref:   1
+#    m1:      0 
+#    m2:      0
+    mu:      1
+    q:       1
+    a1:      0 
+    a2:      0
+    z:       0 
+    beta:    1             # beta in LISA frame
+    lam:     1             # lambda in LISA frame
+    inc:     0 
+    psi:     0
+
+
+estimate:                  # Choose if the parameters in the model are unknown and we have to estimate them, 
+                           # or if we fix them to some initial value: 0 -- fixed, 1 -- vary
+    f_ref:   0
+    phi_ref: 0
+    t_ref:   1
+#    m1:      0 
+#    m2:      0
+    mu:      1
+    q:       1
+    a1:      0 
+    a2:      0
+    z:       0 
+    beta:    1             # beta in LISA frame
+    lam:     1             # lambda in LISA frame
+    #the:    1
+    #phi:    1
+    inc:     0 
+    psi:     0
+
+# Waveforms parameterised with inc and psi parameters. 
+# LDC data is parameterised with the and phi
+  
+default:                   # Default values for the parameters of the model
+
+    f_ref:    0.0                    # Let phenom codes set f_ref -> fmax = max(f^2A(f))
+    phi_ref:  3.783308916721985      # 0.0 phase at f_ref (phase at coalescence)
+    t_ref:   8746646.866967577      # LISA FRAME Reference time in the LISA frame
+      #t_ref:    8746488.468599081      # 24960000.0 # 1.0 * YRSID_SI         
+                                     # Reference time (chosen to be at Tc) [s] (in the SSB reference frame) (Will be at the end of waveform)
+      #m1:       4956676.287599999      # Mass 1 [SolarMass] 
+      #m2:       4067166.60352          # Mass 2 [SolarMass]
+    mu:       3904911.599537377
+    q:        0.820543115493488
+    a1:       0.742128               # Spin 1 [MassSquared]
+    a2:       0.989247               # Spin 2 [MassSquared]
+      #dist:    6.109711607589422      # If distance in [Gpc]? !!!!!!!!!!!!! for waveforms should be in meters, in Gpc ->  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+    z:       6.17688
+      #beta:    -1.081082148175418      # Ecliptic latitude [rad]
+    beta:   -0.002916600850203 # <-this is sin beta # -0.16710915616217228      # LISA FRAME
+      #lam:      4.052962883461064      # Ecliptic longitude [rad]
+    lam:    4.523277153493513           # LISA FRAME 
+      #the:     0.9635860362638292      # InitialPolarAnglel [rad]
+      #phi:     3.6369245022627883      # InitialAzimuthalAnglel [rad]         
+    inc:    0.999692879528681 # <- this is cos inc # 1.4200483407549196      # Inclination [rad]                  define either (inc,psi), or (theL, phiL) and then convert them to (inc, psi)
+      #psi:     1.2284435000811331      # Polirisation angle [rad] 
+    psi:    0.5233284114879632       # LISA FRAME Polarization angle [rad]           the reason for that is that LDC data is provided in (theL, phiL)
+    # offset:                         # When estimating offset in seconds instead of the time of the coalescence                           
+    
+limits:
+
+    min:
+      phi_ref: 0.0
+      #tL_ref: 149500.0 
+      t_ref: 8745000.0
+      #tL_ref: 8746000.468599081
+      #m1: 4500000.0
+      #m2: 3500000.0
+      mu: 3600000.0
+      q: 0.5
+      a1: 0.0                     
+      a2: 0.0                     
+      #dist: 40.0                                 # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!! 
+      z: 5.
+      beta: -1.0                                 # Note! prior is uniform in sin   
+      #betaL: -1.0                                # Note! prior is uniform in sin
+      lam: 0.0
+      #lamL: -1.0                                 # DO NOT FORGET TO MULTIPLY BY PI  
+      #phi: 0.0               
+      #the: -1.0                                  # Note! prior is uniform in cos             
+      inc: -1.0  
+      psi: 0.0
+      #offset: 2500.0
+
+    max:
+      phi_ref: 2.0                              # ! PI  #t_ref: 24960200
+      #tL_ref: 150500.0
+      t_ref: 8748000.0
+        #tL_ref: 8746600.468599081
+      #m1: 5500000.0        
+      #m2: 4500000.0 
+      mu: 4200000.0
+      q: 1.0   
+      a1: 1.0                     
+      a2: 1.0                     
+      #dist: 70                                   # !!!!!!!!!!!!!  DO NOT FORGET TO MULTIPLY BY * PC_SI * 1e9 !!!!!!!!!!!!!!!!!                          
+      z: 7
+      beta: 1.0                                  # Note! prior is uniform in sin
+      #betaL: 1.0                                 # Note! prior is uniform in sin
+      lam: 2.0                                   # DO NOT FORGET TO MULTOPLY BY PI !!!!!!! 
+      #lamL: 1.0                                  # DONOT FORGET TO MULTIPLY BY PI
+      # phi: 2.0                                  # DO NOT FORGET TO MULTIPLY BY PI !!!!!!! 
+     #the: 1.0                                  # Note! prior is unifor min cos
+      inc: 1.0 # cos
+      psi: 1.0 # multiply by pi
+      #offset: 3500.0
+ 
+            
