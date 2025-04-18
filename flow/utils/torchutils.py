@@ -4,6 +4,19 @@ from flow.utils import typechecks as check
 import numpy as np
 import torch
 import yaml
+from ruamel.yaml import YAML
+
+def get_config_yaml(path):
+    """
+    Read configuration parameter form file
+    Args: 
+        path -- Path to the yaml configuration file
+    Return: 
+        Dict with parameter
+    """
+    yaml = YAML()
+    with open(path, 'r') as stream:
+        return yaml.load(stream)
 
 def get_config(path):
     """
