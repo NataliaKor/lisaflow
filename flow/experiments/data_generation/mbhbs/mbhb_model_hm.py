@@ -18,10 +18,8 @@ from bbhx.waveformbuild import BBHWaveformFD
 from bbhx.utils.constants import *
 from bbhx.utils.transform import *
 
-import lisabeta.lisa.ldctools as ldctools
-import lisabeta.lisa.pyLISAnoise as pyLISAnoise
-import lisabeta.lisa.lisa as lisa
-import lisabeta.tools.pytools as pytools
+#import lisabeta.lisa.ldctools as ldctools
+#import lisabeta.lisa.lisa as lisa
 
 import time
 
@@ -85,7 +83,7 @@ class MBHB_gpu(Source):
         params['dist'] = DL(float(params['z']))[0] * PC_SI * 1e6 # DL Converts to Mpc
 
         # Convert to Sylvains parameters
-        Sylvain = True
+        Sylvain = False
         if Sylvain == True:
            params_map = transform_params_mbhb(params, 'forward', 1e-20, self.dtype) 
         
@@ -148,7 +146,8 @@ class MBHB_gpu(Source):
         # and the prior is very narrow we can assume that the detector is quasi stationary.    
         # Convert parameters to a different frame
         if self.config_params['frame'] == 'LISA':
-            params['t_ref'], params['lam'], params['beta'], params['psi'] = lisa.lisatools.ConvertLframeParamsToSSBframe(params['t_ref'], params['lam'], np.arcsin(params['beta']), params['psi'], constellation_ini_phase=0.) 
+            params['t_ref'], params['lam'], params['beta'], params['psi'] = LISA_to_SSB(params['t_ref'], params['lam'], np.arcsin(params['beta']), params['psi'], t0=0.)
+            #params['t_ref'], params['lam'], params['beta'], params['psi'] = lisa.lisatools.ConvertLframeParamsToSSBframe(params['t_ref'], params['lam'], np.arcsin(params['beta']), params['psi'], constellation_ini_phase=0.) 
         else:
             params['beta'] = np.arcsin(params['beta'])
         params['inc'] = np.arccos(params['inc'])
