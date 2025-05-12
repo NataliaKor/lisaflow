@@ -5,9 +5,6 @@ from bbhx.waveformbuild import BBHWaveformFD
 from bbhx.utils.transform import *
 from bbhx.utils.constants import *
 
-import lisabeta.lisa.lisa as lisa
-import lisabeta.lisa.ldctools as ldctools
-
 from flow.utils.noisemodel import *
 from flow.utils.datagenutils_mbhb import *
 
@@ -36,7 +33,8 @@ def create_true_data(config_params, freqs):
         #lam = config_params['default']['lam']
         #psi = config_params['default']['psi']
         inc = config_params['default']['inc']
-        t_ref, lam, beta, psi = lisa.lisatools.ConvertLframeParamsToSSBframe(config_params['default']['t_ref'], config_params['default']['lam'], np.arcsin(config_params['default']['beta']), config_params['default']['psi'], constellation_ini_phase=0.)
+        # TODO: here replace the convergence with the code from BBHX
+        t_ref, lam, beta, psi = LISA_to_SSB(config_params['default']['t_ref'], config_params['default']['lam'], np.arcsin(config_params['default']['beta']), config_params['default']['psi'], t0=0.0)
     elif config_params['frame'] == 'SSB':
         beta = config_params['default']['beta']
         lam = config_params['default']['lam']
@@ -55,7 +53,7 @@ def create_true_data(config_params, freqs):
     wave_gen = BBHWaveformFD(amp_phase_kwargs=dict(run_phenomd=False), use_gpu=True)
     modes = [(2,2), (2,1), (3,3), (3,2), (4,4), (4,3)]
 
-    #psi, inc = ldctools.AziPolAngleL2PsiIncl(beta, lam, the, phi)
+    #psi, inc = lisa.AziPolAngleL2PsiIncl(beta, lam, the, phi)
 
     # Convert angles
     #if sample_in_frame == 'LISA':
