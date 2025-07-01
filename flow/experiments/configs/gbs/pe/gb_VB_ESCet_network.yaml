@@ -1,0 +1,79 @@
+# Config file for MBHB run. Vary only 2 parameters: m1 and m2.
+# Gaussian base distribution with resampling.
+# Data is generated on the fly.
+
+model:                                 # Properties of the model
+
+    base:                              # Base distribution
+      gaussian: 1                       # Type of the base distribution, can be either gaussian (1) or resampled (0) 
+      learn_mean_var: False            # Flag, if true, mean and variance of the distribution is learned
+      params: 4                        # Number of the physical parameters that we want to fit 
+    
+    acceptance_fn:                     # These parameters are only for the case when we use base resampling
+      # To be implemented
+
+    transform:
+      type: rq-coupling                # Type of the transform blocks. At the moment use just one but should be extended to more in the future.
+      hidden_features: 256             
+      num_blocks: 8 # 10                   # Number of times the flow transformation is applied.
+      dropout: 0.2 #0.1 # 0.2
+      batch_norm: 1
+      num_bins: 5 #9 #7  # 5 3
+      tail_bound:  5                    # Box is on [-bound, bound]^2 Can be from 1 to 5
+      unconditional_transform: False   # Apply unconditional transform
+      activation: relu
+
+    affine:
+      hidden_features: 256
+      num_blocks: 2
+      dropout: 0.2
+      batch_norm: 1
+      activation: relu
+
+    flow:
+      num_flow_steps: 4 # 12            # Number of times the flow transformation is applied
+
+    # TODO: there is no context for GBs, we just take the waveforms as it is and compress them with the embedding network
+    # This has to be made equal to the size of the input
+    context:
+      # TODO
+      # We have to define these two parametres automatically based on the number of frequencies and parameters of the network
+      coeffs: 772 # 3452 #12616                       # Number of the first coefficients taken after projecting the data on the new basis, acquired with the SVD decomposition
+      context_features: 772 #256 #291 #256 #291 #128 #387                     # Size of the context data after embedding
+
+    embedding:
+      type: residual
+      hidden_features: 772 
+      num_blocks:  4 # 4
+      activation: elu
+      dropout: 0.2
+      batch_norm: 1
+
+training:
+
+    batch_size: 2048                   # Batch size
+    epochs: 500                       # Number of epochs
+    max_iter: 500                      # Number of iterations inside one ephoch, useful only when the data is created on the fly 
+    learning_rate: 2.e-4 #2.e-4               # Initial learning rate.
+    anneal_learning_rate: 1            # Adjust learnng rate with the cosine annealing. 1 -- TRUE, 0 -- FALSE
+    num_training_steps: 500           # Number of total training steps (important for annealing of the learning rate)
+    weight_decay: 1.e-5                # ~ L2 norm 
+    seed: 1                            # Seed for training run
+    grad_norm_clip_value: 5 # 0            # Value by which to clip the norm of the gradient 
+    resume: 0                        # Resume training (1) or start from scratch (0).
+    checkpoints: checkpointVB_linear_ESCet_23.pt       # Path to the checkpoint from which we are going to resume the training
+
+
+samples:
+
+    path: /sps/lisaf/natalia/github/lisaflow/flow/experiments/samples/GB/ESCet.npy
+
+
+saving:
+
+    save_root: /sps/lisaf/natalia/training_data/gb_linear/
+    label: VB_linear_ESCet
+
+plots:
+
+    label: VB_linear_ESCet
