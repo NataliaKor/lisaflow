@@ -15,8 +15,8 @@ setup(
       'Programming Language :: Python :: 3',
     ],
     keywords=['LISA','normalising flow','parameter estimation'],
-    packages=setuptools.find_packages(),
-    install_requires=['torch','numpy','matplotlib','corner','h5py','scipy']
+    #packages=setuptools.find_packages(),
+    #install_requires=['torch','numpy','matplotlib','corner','h5py','scipy']
 )
 
 
