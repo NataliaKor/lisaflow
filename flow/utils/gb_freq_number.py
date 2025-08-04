@@ -2,6 +2,7 @@
 # GBGPU/gbgpu/utils/utility.py
 
 import numpy as np
+import cupy as cp
 from flow.utils.noisemodel import *
 from gbgpu.utils.constants import *
 
@@ -60,7 +61,7 @@ def get_N(amp, f0, Tobs, oversample=1):
         fonfs = f0 / fstar
 
         noise = AnalyticNoise(f0, 'MRDv1')
-        SnX = np.sqrt(noise.psd(option="X"))
+        SnX = np.sqrt(noise.psd(option="X").get())
 
         #  calculate michelson noise
         Sm = SnX / (4.0 * np.sin(fonfs) * np.sin(fonfs))

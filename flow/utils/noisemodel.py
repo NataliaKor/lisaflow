@@ -1,6 +1,6 @@
 # Noise curve taken from LDC used for Sangria and Spritz, "MRDv1"
 from abc import ABC, abstractmethod
-import numpy as cp
+import cupy as cp
 CLIGHT = 299792458. 
 arm_length = 2.5e9
 
@@ -22,17 +22,17 @@ class AnalyticNoise(ABC):
             self.DSa_a = (2.4e-15)**2 # m^2/sec^4/Hz
         else:
             raise NotImplementedError('Noise type '+ noise_type + ' not implemented')
-        self.freq = frq            
+        self.freq = cp.array(frq)           
 
         # Acceleration noise
-        Sa_a = self.DSa_a * (1.0 +(0.4e-3/frq)**2) * (1.0+(frq/8e-3)**4) # in acceleration
-        self.Sa_d = Sa_a*(2.*cp.pi*frq)**(-4.) # in displacement
-        Sa_nu = self.Sa_d*(2.0*cp.pi*frq/CLIGHT)**2 # in rel freq unit
+        Sa_a = self.DSa_a * (1.0 +(0.4e-3/self.freq)**2) * (1.0+(self.freq/8e-3)**4) # in acceleration
+        self.Sa_d = Sa_a*(2.*cp.pi*self.freq)**(-4.) # in displacement
+        Sa_nu = self.Sa_d*(2.0*cp.pi*self.freq/CLIGHT)**2 # in rel freq unit
         self.Spm =  Sa_nu
 
         # Optical Metrology System
-        self.Soms_d = self.DSoms_d * (1. + (2.e-3/frq)**4) # in displacement
-        Soms_nu = self.Soms_d*(2.0*cp.pi*frq/CLIGHT)**2 # in rel freq unit
+        self.Soms_d = self.DSoms_d * (1. + (2.e-3/self.freq)**4) # in displacement
+        Soms_nu = self.Soms_d*(2.0*cp.pi*self.freq/CLIGHT)**2 # in rel freq unit
         self.Sop =  Soms_nu
 
     def psd(self, option="A", tdi2=False):#, includewd=0):
@@ -42,7 +42,7 @@ class AnalyticNoise(ABC):
 
         """
         lisaLT = arm_length/CLIGHT
-        x = 2.0 * cp.pi * lisaLT * self.freq #cp.array(self.freq)
+        x = 2.0 * cp.pi * lisaLT * self.freq # make this CPU/GPU agnostic 
        
         if option=="X":
             S = 16.0 * cp.sin(x)**2 * (2.0 * (1.0 + cp.cos(x)**2) * self.Spm + self.Sop)
@@ -57,6 +57,5 @@ class AnalyticNoise(ABC):
             factor_tdi2 = 4 * cp.sin(2 * x)**2
             S *= factor_tdi2
         return S
-
 
 
