@@ -16,6 +16,8 @@ from flow.experiments.data_generation.base import Source
 from flow.utils.noisemodel import *
 from flow.utils.transform_to_as import *
 
+from lisatools.detector import EqualArmlengthOrbits, Orbits
+
 # Making code agnostic to CPU/GPU
 def std_get_wrapper(arg):
     return arg
@@ -252,12 +254,12 @@ class GB_gpu(Source):
 
  
         if self.sample_physical == True:
-            gb1 = GBGPU(use_gpu=True)        
+            gb1 = GBGPU(use_gpu=True, orbits=EqualArmlengthOrbits(use_gpu=True)) 
             gb1.run_wave(*self.params0, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
  
         else:
-            gb1 = GBGPU(use_gpu=True)
-            gb2 = GBGPU(use_gpu=True)
+            gb1 = GBGPU(use_gpu=True, orbits=EqualArmlengthOrbits(use_gpu=True))
+            gb2 = GBGPU(use_gpu=True, orbits=EqualArmlengthOrbits(use_gpu=True))
             gb1.run_wave(*self.params1, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
             gb2.run_wave(*self.params2, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
 
@@ -410,7 +412,7 @@ class GB_gpu(Source):
             truths = np.array([f0, fdot, np.sin(beta), lam, a1.cpu().detach().numpy(), a2.cpu().detach().numpy(), a3.cpu().detach().numpy(), a4.cpu().detach().numpy()])
     
         # Create waveform
-        gb = GBGPU(use_gpu=True)
+        gb = GBGPU(use_gpu=True, orbits=EqualArmlengthOrbits(use_gpu=True))
         gb.run_wave(*params, N = self.num_f, dt = self.dt, T = self.Tobs, oversample = 2)#oversample=2)
 
         A_out = xp.zeros((1, self.num), dtype=xp.complex128)
