@@ -10,9 +10,9 @@ import torch
 from gbgpu.gbgpu import GBGPU
 from gbgpu.utils.constants import *
 
-from data_generation.base import Source
+from flow.experiments.data_generation.base import Source
 
-import lisabeta.lisa.pyLISAnoise as pyLISAnoise
+#import lisabeta.lisa.pyLISAnoise as pyLISAnoise
 from flow.utils.noisemodel import *
 from flow.utils.transform_to_as import *
 
@@ -84,8 +84,7 @@ class GB_gpu(Source):
     def sample_from_prior(self, N, iteration):
         '''
           Num_f -- is the number of frequencies 
-        '''
-    
+        ''' 
         check_prior_on_as = False
 
         sampling_parameters = xp.empty((N,0))
@@ -155,7 +154,7 @@ class GB_gpu(Source):
                 psi = xp.repeat(xp.array(self.config_data['default']['psi']),N) 
                 
             ffdot = xp.zeros(N) 
-            self.params0 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi, lam, beta]) # Check if it matters if it is phi0 or -phi0
+            self.params0 = xp.array([amp, f0, fdot, ffdot, phi0, iota, psi, lam, beta]) # Check if it matters if it is phi0 or -phi0
             # Construct batch of paramaters fro sampling
 
             #sampling_parameters = sampling_parameters.T
@@ -174,7 +173,7 @@ class GB_gpu(Source):
                 psi =  xp.random.uniform(self.config_data['limits']['min']['psi'] * xp.pi, self.config_data['limits']['max']['psi'] * xp.pi, N)    # np.pi
     
                 ffdot = xp.zeros(N) 
-                self.params0 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi, lam, beta])
+                self.params0 = xp.array([amp, f0, fdot, ffdot, phi0, iota, psi, lam, beta])
 
                 # We do not use this transform here. This is just to check what are the priors
                 a1, a2, a3, a4 = transform_params(torch.as_tensor(amp).type(self.dtype), \
@@ -211,8 +210,8 @@ class GB_gpu(Source):
             psi1 = xp.zeros(N) 
             psi2 = 0.25*xp.pi*xp.ones(N)    
        
-            self.params1 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi1, lam, beta])
-            self.params2 = xp.array([amp, f0, fdot, ffdot, -phi0, iota, psi2, lam, beta])
+            self.params1 = xp.array([amp, f0, fdot, ffdot, phi0, iota, psi1, lam, beta])
+            self.params2 = xp.array([amp, f0, fdot, ffdot, phi0, iota, psi2, lam, beta])
 
             # Construct batch of paramaters fro sampling
             sampling_parameters = xp.vstack((f0, fdot, beta_sin, lam, a1, a2, a3, a4)).T
@@ -257,7 +256,6 @@ class GB_gpu(Source):
             gb1.run_wave(*self.params0, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
  
         else:
-
             gb1 = GBGPU(use_gpu=True)
             gb2 = GBGPU(use_gpu=True)
             gb1.run_wave(*self.params1, N = self.num_f, dt = self.dt, T = self.Tobs, oversample=2)
@@ -390,15 +388,14 @@ class GB_gpu(Source):
         '''
         amp   = self.config_data['default']['amp']
         f0 = self.config_data['default']['f0']
-        fdot = self.config_data['default']['fdot']
-       
+        fdot = self.config_data['default']['fdot']       
         phi0 = self.config_data['default']['phi0']
         iota = self.config_data['default']['iota']
         psi = self.config_data['default']['psi'] 
         lam = self.config_data['default']['lam']
         beta = self.config_data['default']['beta']
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - phi0
-        params = np.array([amp, f0, fdot, 0.0, -phi0, iota, psi, lam, beta])
+        params = np.array([amp, f0, fdot, 0.0, phi0, iota, psi, lam, beta])
 
         if self.sample_physical == True:
             truths = np.array((f0, fdot, np.sin(beta), lam))
