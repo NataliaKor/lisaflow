@@ -98,9 +98,9 @@ def norm_wf(wf, wf_scale, dtype):
 def main(parser):
 
     # Parse command line arguments
-    parser.add_argument('--config', type=str, default='configs/gbs/pe/gb_VB_ZTFJ1539_network.yaml',
+    parser.add_argument('--config', type=str, default='../configs/gbs/pe/gb_VB_ZTFJ1539_network.yaml',
                         help='Path to config file specifying model architecture and training procedure')
-    parser.add_argument('--config_data', type=str, default='configs/gbs/pe/gb_VB_ZTFJ1539_param.yaml',
+    parser.add_argument('--config_data', type=str, default='../configs/gbs/pe/gb_VB_ZTFJ1539_param.yaml',
                         help='Path to config file specifying parameters of the source when we sample on the fly')
     parser.add_argument('--resume', type=int, default=1, help='Flag whether to resume training')
 
