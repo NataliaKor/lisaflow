@@ -29,7 +29,7 @@ from flow.networks.densenet import DenseNet
 
 from flow.utils.gb_freq_number import get_N
 
-from flow_architecture_play import *
+from flow.experiments.flow_architecture_play import *
 
 torch.set_printoptions(precision=10)
 
