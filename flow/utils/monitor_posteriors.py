@@ -11,12 +11,12 @@ sns.set_theme(style="whitegrid")
 from flow.experiments.data_generation.gbs.gb_model_std_norm import GB_gpu
 from flow.experiments.flow_architecture_play import *
 
-from flow.distributions.normal import *
-from flow.distributions.resample import *
-from flow.utils.torchutils import *
+from nflows.distributions.normal import *
+from nflows.utils.torchutils import *
 
-from flow.networks.mlp import MLP
-from flow.networks.resnet import ConvResidualNet
+from ..distributions.resample import *
+from ..networks.mlp import MLP
+from ..networks.resnet import ConvResidualNet
 
 # Take a sample from the posteriors, calculate waveform
 def sample_from_base(flow, coeff_norm, truths, param_mean, param_std, labels, label_plot, num_samples, num_repeat):

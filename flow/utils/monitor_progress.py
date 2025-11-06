@@ -5,7 +5,7 @@ import numpy as np
 import corner
 import matplotlib.pyplot as plt
 from scipy import stats
-from flow.utils.transform_to_as import * 
+from .transform_to_as import * 
 import h5py
 
 
