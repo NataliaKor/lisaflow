@@ -7,8 +7,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from flow.distributions.base import Distribution
-from flow.utils import torchutils
+from nflows.distributions.base import Distribution
+from nflows.utils import torchutils
 
 
 class ResampledGaussian(Distribution):

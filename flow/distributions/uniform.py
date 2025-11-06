@@ -1,8 +1,9 @@
 import numpy as np
 import torch
 
-from flow.distributions.base import Distribution
-from flow.utils import torchutils
+from nflows.distributions.base import Distribution
+from nflows.utils import torchutils
+
 
 class UniformUnit(Distribution):
     """
