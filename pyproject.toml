@@ -1,0 +1,55 @@
+[project]
+name = "lisaflow"
+
+version = "0.1"
+
+description = "Neural density estimators with Normalising Flow used for LISA."
+
+authors = [
+  { name = "Natalia Korsakova", email = "natalia.korsakova@oca.eu" },
+]
+
+readme = "README.md"
+
+classifiers = [
+  'Development Status :: 3 - Alpha',
+  'Intended Audience :: Science/Research',
+  'Programming Language :: Python :: 3',
+]
+
+keywords=[
+  'LISA',
+  'normalising flow',
+  'parameter estimation',
+]
+
+requires-python = ">= 3.9"
+
+dependencies = [
+  # General scientific packages
+  "numpy",
+  "scipy",
+  "matplotlib",
+  "h5py",
+  # Torch
+  "torch",
+  "torchvision",
+  # nflows
+  "nflows",
+  # LISA tools
+  "lisabeta",
+  # Other
+  "ruamel.yaml",
+  "corner",
+]
+
+optional-dependencies.gpu = [
+  'cupy; platform_system != "Darwin"',
+]
+
+[build-system]
+requires = [
+  "setuptools >= 77.0.3"
+]
+
+build-backend = "setuptools.build_meta"
