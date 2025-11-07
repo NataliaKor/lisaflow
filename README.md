@@ -1,4 +1,5 @@
-# lisaflow
+# LISAFlow
+
 Neural density estimators with Normalising Flow used for LISA.
 
 Path to the checkpoint for the Galaxy:
