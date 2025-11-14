@@ -6,7 +6,7 @@ from torch.nn import init
 from typing import Any, Callable, List, Optional, Type, Union
 from torch import Tensor
 
-import flow.utils as utils
+from .. import utils
 
 
 class ResidualBlock(nn.Module):
