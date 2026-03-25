@@ -1,4 +1,4 @@
-''':wq
+'''
 
   Generation of the MBHB waveforms on the fly.
 '''
@@ -17,6 +17,8 @@ from astropy.cosmology import FlatLambdaCDM
 from bbhx.waveformbuild import BBHWaveformFD
 from bbhx.utils.constants import *
 from bbhx.utils.transform import *
+
+from lisatools.detector import EqualArmlengthOrbits, Orbits
 
 #import lisabeta.lisa.ldctools as ldctools
 #import lisabeta.lisa.lisa as lisa
@@ -55,7 +57,6 @@ class MBHB_gpu(Source):
 
          self.mbhb = None
       
-         #self.freqs = None
          self.params = None # Values of paramteres that are passed to the waveform generator
          self.params_batch = None # Batch with the values of parameters which are passed for training
 
@@ -79,8 +80,9 @@ class MBHB_gpu(Source):
         # Initilise parameters with default values
         params_default = self.config_params['default']
         params = params_default.copy()
-        
-        params['dist'] = DL(float(params['z']))[0] * PC_SI * 1e6 # DL Converts to Mpc
+
+        #params['dist'] = DL(float(params['z']))[0] * PC_SI * 1e6 # DL Converts to Mpc
+        #print('params[dist] = ', params['dist'])
 
         # Convert to Sylvains parameters
         Sylvain = False
@@ -97,7 +99,7 @@ class MBHB_gpu(Source):
             num_params = num_params + value
         #num_params = self.config['model']['base']['params']
 
-        self.params_batch = np.zeros((N, num_params))
+        self.params_batch = xp.zeros((N, num_params))
 
         i = 0
         # Sample parameters the ones we choose to vary
@@ -106,25 +108,27 @@ class MBHB_gpu(Source):
                 if key in angles:
                     c_pi = np.pi
                 else: c_pi = 1.      
-                params[key] = np.random.uniform(c_pi*float(params_min_all[key]), c_pi*float(params_max_all[key]), N) 
+                params[key] = xp.random.uniform(c_pi*float(params_min_all[key]), c_pi*float(params_max_all[key]), N) 
                 # For the first iteration record values for normalisation and labels to be able to restore the values to original range
                 if iteration == 0:
                     # Estimate and record mean and std values
-                    self.params_mean.append(np.mean(params[key], axis=0))
-                    self.params_std.append(np.std(params[key], axis=0))
+                    self.params_mean.append(np.mean(params[key].get(), axis=0))
+                    self.params_std.append(np.std(params[key].get(), axis=0))
                     #self.params_min.append(c_pi*params_min_all[key])
                     #self.params_max.append(c_pi*params_max_all[key]) 
                     self.params_label.append(key)
                 # Standerdise parameters
-                self.params_batch[:,i] = (params[key] - self.params_mean[i]) / self.params_std[i]              
+                self.params_batch[:,i] = (params[key] - self.params_mean[i]) / self.params_std[i]
                 # Normalise
                 #self.params_batch[:,i]  = normalise_par(self.params_batch[:,i], params_min_all[key]*c_pi, params_max_all[key]*c_pi)
                 i+=1
             else:
                 # If we do not estimate the parameter, we record the default value
-                params[key] = np.full((N), params_default[key])
-
-        np.savetxt(self.config['saving']['save_root'] + 'mean_' + self.config['saving']['label'] + '.txt', self.params_mean)
+                #print('type(params_default[key]) = ', type(float(params_default[key])))
+                params[key] = xp.full((N), xp.array(float(params_default[key])))
+        #print('type(self.params_mean[0]) = ', type(self.params_mean[0]))
+        np.savetxt(self.config['saving']['save_root'] + 'mean_' +
+                self.config['saving']['label'] + '.txt', self.params_mean)
         np.savetxt(self.config['saving']['save_root']+ 'std_' + self.config['saving']['label'] + '.txt', self.params_std)
         #print('self.params_mean = ', self.params_mean)
         #print('self.params_std = ', self.params_std)
@@ -146,11 +150,11 @@ class MBHB_gpu(Source):
         # and the prior is very narrow we can assume that the detector is quasi stationary.    
         # Convert parameters to a different frame
         if self.config_params['frame'] == 'LISA':
-            params['t_ref'], params['lam'], params['beta'], params['psi'] = LISA_to_SSB(params['t_ref'], params['lam'], np.arcsin(params['beta']), params['psi'], t0=0.)
+            params['t_ref'], params['lam'], params['beta'], params['psi'] = LISA_to_SSB(params['t_ref'], params['lam'], xp.arcsin(params['beta']), params['psi'], t0=0.)
             #params['t_ref'], params['lam'], params['beta'], params['psi'] = lisa.lisatools.ConvertLframeParamsToSSBframe(params['t_ref'], params['lam'], np.arcsin(params['beta']), params['psi'], constellation_ini_phase=0.) 
         else:
-            params['beta'] = np.arcsin(params['beta'])
-        params['inc'] = np.arccos(params['inc'])
+            params['beta'] = xp.arcsin(params['beta'])
+        params['inc'] = xp.arccos(params['inc'])
         #if sample_in_frame == 'SSB':
         #    psi, inc = ldctools.AziPolAngleL2PsiIncl(beta, lam, the, phi)
         #    tcL_var, lamL, betaL, psiL = lisa.lisatools.ConvertSSBframeParamsToLframe(tc_var, lam, beta, psi, 0.0)  # Check what exactly is zero #value
@@ -172,23 +176,30 @@ class MBHB_gpu(Source):
         #Nfreq = int(self.Tobs / self.dt)
         #self.freqs = xp.fft.rfftfreq(Nfreq, self.dt)
 
-        wave_gen = BBHWaveformFD(amp_phase_kwargs=dict(run_phenomd=False), use_gpu=True)
+
+        response_kwargs = dict(orbits=EqualArmlengthOrbits(use_gpu=True,force_backend="cuda12x"))
+        wave_gen = BBHWaveformFD(amp_phase_kwargs=dict(run_phenomd=False), response_kwargs=response_kwargs, force_backend="cuda12x")
 
         modes = [(2,2), (2,1), (3,3), (3,2), (4,4), (4,3)]
+        #modes = [(2,2)]
 
         # Convert mu and q to m1 and m2
-        m1 = self.params['mu'] * ((self.params['q'] + 1)**0.2)/self.params['q']**0.6
-        m2 = self.params['mu'] * self.params['q']**0.4 * (self.params['q'] + 1)**0.2
+        if self.config_params['param'] == 'mu':
+            m1 = self.params['mu'] * ((self.params['q'] + 1)**0.2)/self.params['q']**0.6
+            m2 = self.params['mu'] * self.params['q']**0.4 * (self.params['q'] + 1)**0.2
+        else:
+            m1 = self.params['m1']
+            m2 = self.params['m2']
 
-        self.mbhb = wave_gen(m1, m2, self.params['a1'], self.params['a2'], self.params['dist'],
+        #print('self.params[t_ref] = ', self.params['t_ref'])
+        self.mbhb = wave_gen(m1, m2, self.params['a1'], self.params['a2'], self.params['dist']* PC_SI * 1e6,
                                       self.params['phi_ref'], self.params['f_ref'], self.params['inc'], self.params['lam'],
-                                      self.params['beta'], self.params['psi'], self.params['t_ref'], freqs = self.freqs,
+                                      self.params['beta'], self.params['psi'], self.params['t_ref'], 
+                                      t_obs_start=0.0, t_obs_end=0.1,
+                                      freqs = self.freqs,
                                       modes = modes, direct=False, fill=True, length=1024)#[0] 
 
-        #sampling_parameters = xp.vstack((mu, q, a1, a2, inc_cos, lamL, betaL_sin, psiL, phi_ref, offset)).T
- 
-        # Return the set of standardised parameters to sample
-        #self.param_batch = (sampling_parameters - self.parameters_mean) / self.parameters_std
+        plt.loglog(self.freqs.get(), np.abs(self.mbhb[0,0,:].get()))
 
 
     # Create waveform combinations
@@ -237,7 +248,7 @@ class MBHB_gpu(Source):
         #plt.close()
 
         #plt.figure()
-        #plt.plot(ts_mbhb[1,:].get())
+        #plt.plot(ts_mbhb[5,:].get())
         #plt.savefig('ts_mbhb1.png')
         #plt.close()
 
@@ -254,11 +265,14 @@ class MBHB_gpu(Source):
         #plt.figure()
         #plt.plot(ts_mbhb[4,:].get())
         #plt.savefig('ts_mbhb4.png')
+        #plt.close()
+
+        #plt.figure()
         #plt.plot(ts_mbhb[5,:].get())
         #plt.savefig('ts_mbhb0_5.png')
         #plt.close()
-    
-
+        #exit()
+        #print('ts_mbhb.shape = ', ts_mbhb.shape)
         #t1 = time.time()
         return ts_mbhb
 
