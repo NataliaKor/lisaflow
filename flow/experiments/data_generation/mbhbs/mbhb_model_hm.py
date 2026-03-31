@@ -181,7 +181,6 @@ class MBHB_gpu(Source):
         wave_gen = BBHWaveformFD(amp_phase_kwargs=dict(run_phenomd=False), response_kwargs=response_kwargs, force_backend="cuda12x")
 
         modes = [(2,2), (2,1), (3,3), (3,2), (4,4), (4,3)]
-        #modes = [(2,2)]
 
         # Convert mu and q to m1 and m2
         if self.config_params['param'] == 'mu':
@@ -195,7 +194,7 @@ class MBHB_gpu(Source):
         self.mbhb = wave_gen(m1, m2, self.params['a1'], self.params['a2'], self.params['dist']* PC_SI * 1e6,
                                       self.params['phi_ref'], self.params['f_ref'], self.params['inc'], self.params['lam'],
                                       self.params['beta'], self.params['psi'], self.params['t_ref'], 
-                                      t_obs_start=0.0, t_obs_end=0.1,
+                                      t_obs_start=0.0, t_obs_end=1.0, #t_obs_start=0.0, t_obs_end=0.1,
                                       freqs = self.freqs,
                                       modes = modes, direct=False, fill=True, length=1024)#[0] 
 
@@ -210,7 +209,7 @@ class MBHB_gpu(Source):
         noise = AnalyticNoise(self.freqs[1:], 'MRDv1')
         noisevals_A, noisevals_E = noise.psd(option="A"), noise.psd(option="E")
 
-        # TODO implement my own noise on the GPU !!!
+        # TODO reimplement noise on GPU 
         noiseA_cp = xp.asarray(noisevals_A)
         noiseE_cp = xp.asarray(noisevals_E)
 
@@ -220,11 +219,9 @@ class MBHB_gpu(Source):
         #shift = xp.exp(1j*2.0*np.pi*self.freqs*t_shift) 
         wf_shift = xp.exp(1j*2.0*np.pi*xp.matmul(t_shift.reshape(-1,1), self.freqs.reshape(1,-1)))
 
-
-        # Whiten the waveforms
-        # CHECK WHAT WILL HAPPEN IF I REMOVE dt FACTOR
-        Afs_white = self.mbhb[:,0,1:]*xp.sqrt(4.0*self.df)/xp.sqrt(noiseA_cp) # * self.dt
-        Efs_white = self.mbhb[:,1,1:]*xp.sqrt(4.0*self.df)/xp.sqrt(noiseE_cp) # * self.dt 
+        # Whitten the waveforms
+        Afs_white = self.mbhb[:,0,1:]*xp.sqrt(4.0*self.df)/xp.sqrt(noiseA_cp)
+        Efs_white = self.mbhb[:,1,1:]*xp.sqrt(4.0*self.df)/xp.sqrt(noiseE_cp)
     
         #plt.loglog(freq_new, np.abs(wave_all), '--', label="BBHx")
         #plt.xlabel("f [Hz]", fontsize=14)
@@ -232,14 +229,24 @@ class MBHB_gpu(Source):
         #plt.legend()
         #plt.sacefig('')
  
-        #Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white]*self.wf_shift, axis = 1)
-        #Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]) ,Efs_white]*self.wf_shift, axis = 1)
-        Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white]*wf_shift, axis = 1)
-        Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]), Efs_white]*wf_shift, axis = 1)
+#        Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white]*wf_shift, axis = 1)
+#        Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]), Efs_white]*wf_shift, axis = 1)
  
+        Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white], axis = 1)
+        Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]), Efs_white], axis = 1)
+
         # Shift time domain waveform such that the merger is not at the end of the waveform 
         #ts_mbhb = xp.c_[Ats_arr[:,-10000], Ats_arr[:,:1000], Ets_arr[:,-10000], Ets_arr[:,:1000]]
         ts_mbhb = xp.c_[Ats_arr, Ets_arr]
+
+        #print('ts_mbhb.shape = ', ts_mbhb.shape)
+        #plt.figure()
+        #plt.plot(Ats_arr[0,64500:].get())
+        #plt.plot(Ats_arr[1,64500:].get())
+        #plt.plot(Ats_arr[2,64500:].get())
+        #plt.plot(Ats_arr[3,64500:].get())
+        #plt.savefig('ts_mbhb0A.png')
+        #plt.close()
 
         #print('ts_mbhb.shape = ', ts_mbhb.shape)
         #plt.figure()
@@ -247,33 +254,6 @@ class MBHB_gpu(Source):
         #plt.savefig('ts_mbhb0.png')
         #plt.close()
 
-        #plt.figure()
-        #plt.plot(ts_mbhb[5,:].get())
-        #plt.savefig('ts_mbhb1.png')
-        #plt.close()
-
-        #plt.figure()
-        #plt.plot(ts_mbhb[2,:].get())
-        #plt.savefig('ts_mbhb2.png')
-        #plt.close()
-
-        #plt.figure()
-        #plt.plot(ts_mbhb[3,:].get())
-        #plt.savefig('ts_mbhb3.png')
-        #plt.close()
-
-        #plt.figure()
-        #plt.plot(ts_mbhb[4,:].get())
-        #plt.savefig('ts_mbhb4.png')
-        #plt.close()
-
-        #plt.figure()
-        #plt.plot(ts_mbhb[5,:].get())
-        #plt.savefig('ts_mbhb0_5.png')
-        #plt.close()
-        #exit()
-        #print('ts_mbhb.shape = ', ts_mbhb.shape)
-        #t1 = time.time()
         return ts_mbhb
 
     def get_params(self):
