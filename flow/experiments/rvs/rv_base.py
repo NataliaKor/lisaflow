@@ -14,7 +14,10 @@ from flow.utils.monitor_progress import *
 from flow.utils.torchutils import *
 
 from torch.utils.data import DataLoader
+
+# This have to be arranged in the same repository
 from flow.experiments.dataloaders.data_loader_1gb import NPYDataset
+from flow.experiments.galaxy.npy_galaxy_dataset import NPYGalaxyDataset #GalaxyHDF5Dataset
 
 import time
 
@@ -58,7 +61,7 @@ class RV_base(nn.Module):
         raise RuntimeError("Forward method cannot be called for a Distribution object.")
 
 
-    def fit(self):
+    def fit(self, source):
         """ Fit network to samples.
         """
         # Prepare parameters for training 
@@ -67,16 +70,23 @@ class RV_base(nn.Module):
         number_iterations = self.config['training']['max_iter']
         grad_norm_clip_value = self.config['training']['grad_norm_clip_value']
         anneal_learning_rate =  self.config['training']['anneal_learning_rate']
-
-        # Initialise dataloader
         filename = self.config['samples']['path']
-        dataset = NPYDataset(filename)
+
+        print('filename = ', filename)
+        # Initialise dataloader
+        if source == 'GB':
+            dataset = NPYDataset(filename)
+        elif source == 'Galaxy':
+            dataset = NPYGalaxyDataset(filename)
+        else:
+            print('No such dataset')
         # Dataloader for training data
+        print('batch_size = ', batch_size)
         loader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=True,
                             num_workers=4,
-                            pin_memory=True)
+                            pin_memory=False)
 
         # Record losses
         losses = []
@@ -127,8 +137,9 @@ class RV_base(nn.Module):
         # Load here the labels of parameters
         param_min = dataset.samples_min
         param_max = dataset.samples_max
-        np.savetxt(self.config['saving']['save_root'] + 'minmax_' + self.config['saving']['label'] + '.txt', (param_min, param_max))
-  
+        param_minmax = np.stack([np.array(param_min), np.array(param_max)],axis=1)
+        np.savetxt(self.config['saving']['save_root'] + 'minmax_' + self.config['saving']['label'] + '.txt', param_minmax.squeeze())
+        
         for j0 in range(number_epochs):
 
             j = j0 + last_epoch + 1
@@ -137,15 +148,14 @@ class RV_base(nn.Module):
             start_epoch = time.time()
 
             for i, params_cpu in enumerate(loader):
-
                 params = torch.as_tensor(params_cpu).type(self.dtype)
-                loss = -flow.log_prob(params).mean()
+                loss = -flow.log_prob(params.squeeze()).mean()
 
                 optimizer.zero_grad()
                 loss.backward(retain_graph=True)
 
-                if grad_norm_clip_value > 0:
-                    clip_grad_norm_(flow.parameters(), grad_norm_clip_value)
+                #if grad_norm_clip_value > 0:
+                #    clip_grad_norm_(flow.parameters(), grad_norm_clip_value)
                 optimizer.step()
 
             
@@ -179,7 +189,7 @@ class RV_base(nn.Module):
 
                 # Label for plots
                 label = self.config['plots']['label']
-                make_cp_density_estimation_minus1(flow, j, parameter_labels, param_min, param_max, label, filename)
+                #make_cp_density_estimation_minus1(flow, j, parameter_labels, param_min, param_max, label, filename)
                 gc.collect()
 
 

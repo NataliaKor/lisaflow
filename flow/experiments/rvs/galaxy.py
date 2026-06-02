@@ -1,5 +1,4 @@
-# In the future create base class for fiting and sampling distributions.
-# Inherit Galaxy class from the base class.
+# Class to sample from the Galaxy.
 import torch
 import numpy as np
 import cupy as cp
@@ -33,17 +32,14 @@ class Galaxy(RV_base):
             log_prob = torch.zeros((inputs.shape[0],))
             for (stind, endind, inputs_batch) in self.get_batchs(inputs):
                 log_prob[stind: endind] = self.flow.log_prob(inputs_batch)
- 
+
             # Jacobian of the forward transform
-            log_prob_norm1_forward = cp.log(cp.log(10)) - cp.log(cp.power(10,inputs_nonorm[:,0])) + \
-                                                          cp.cos(inputs_nonorm[:,1]) 
-            log_prob_norm2_forward = cp.log(8) - cp.log(self.param_max[0] - self.param_min[0]) - \
-                                                 cp.log(self.param_max[1] - self.param_min[1]) - \
-                                                 cp.log(self.param_max[2] - self.param_min[2])
-        log_prob_cupy = cp.asarray(log_prob) + log_prob_norm1_forward + log_prob_norm2_forward
+            n_param = self.param_max.size(dim=0)
+            log_prob_norm_forward = self.xp.log(self.xp.power(2.,n_param)) - self.xp.sum(self.xp.log(self.param_max - self.param_min))
+ 
+        log_prob_cupy = cp.asarray(log_prob) + log_prob_norm_forward
         return log_prob_cupy
 
     def _renormalise(self, inputs):
-
         inputs = self.param_min + (inputs + 1.0)*(self.param_max - self.param_min)/2.0
         return inputs
