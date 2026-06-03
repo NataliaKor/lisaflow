@@ -20,11 +20,12 @@ def create_true_data(config_params, freqs, N):
 
     f_ref   = config_params['default']['f_ref']
     phi_ref = config_params['default']['phi_ref']
-    m1 = config_params['default']['m1']
-    m2 = config_params['default']['m2']
-    # Convert mu and q to m1 and m2
-    #m1 = config_params['default']['mu'] * ((config_params['default']['q'] + 1)**0.2)/config_params['default']['q']**0.6
-    #m2 = config_params['default']['mu'] * config_params['default']['q']**0.4 * (config_params['default']['q'] + 1)**0.2
+    if config_params['param'] == 'mu': 
+        m1 = config_params['default']['mu'] * ((config_params['default']['q'] + 1)**0.2)/config_params['default']['q']**0.6
+        m2 = config_params['default']['mu'] * config_params['default']['q']**0.4 * (config_params['default']['q'] + 1)**0.2
+    else:
+        m1 = config_params['default']['m1']
+        m2 = config_params['default']['m2']
 
     a1 = config_params['default']['a1']
     a2 = config_params['default']['a2']
@@ -50,8 +51,6 @@ def create_true_data(config_params, freqs, N):
     else:
         print('No such reference frame')
 
-    # m1 = mu * ((q + 1)**0.2)/q**0.6
-    # m2 = mu * q**0.4 * (q + 1)**0.2
     # dist = DL(z)[0] * PC_SI * 1e6
 
     response_kwargs = dict(orbits=EqualArmlengthOrbits(use_gpu=True,force_backend="cuda12x"))
@@ -73,7 +72,7 @@ def create_true_data(config_params, freqs, N):
                     xp.full((N), xp.array(phi_ref)), xp.full((N), xp.array(f_ref)), 
                     xp.arccos(xp.full((N), xp.array(inc))), xp.full((N), xp.array(lam)), xp.full((N), xp.array(beta)), 
                     xp.full((N), xp.array(psi)), xp.full((N), xp.array(t_ref)),
-                    t_obs_start=0.0, t_obs_end=0.1,
+                    t_obs_start=0.0, t_obs_end=1.0,
                     freqs = freqs, modes = modes, direct=False, fill=True, length=1024)
     print('After wave_gen')
     param_transform = lambda x, k : np.cos(x) if k == 'inc' else np.sin(x) if k == 'beta' else x 
@@ -95,21 +94,20 @@ def create_true_data(config_params, freqs, N):
 
     Nfreq = freqs.shape[0]
     #print('Nfreq = ', Nfreq)
-    t_shift = xp.asarray(t_ref) + 5000.0 +  2.0*dt*Nfreq 
-    shift = xp.exp(1j*2.0*np.pi*freqs*t_shift)
+    #t_shift = xp.asarray(t_ref) + 5000.0 +  2.0*dt*Nfreq 
+    #shift = xp.exp(1j*2.0*np.pi*freqs*t_shift)
 
-    #Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white], axis = 1)
-    #Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]) ,Efs_white], axis = 1)
-    Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white]*shift, axis = 1)
-    Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]) ,Efs_white]*shift, axis = 1)
+    Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white], axis = 1)
+    Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]) ,Efs_white], axis = 1)
+    #Ats_arr = xp.fft.irfft(xp.c_[xp.zeros(Afs_white.shape[0]), Afs_white]*shift, axis = 1)
+    #Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]) ,Efs_white]*shift, axis = 1)
 
     # Shift time domain waveform such that the merger is not at the end of the waveform 
     ts_mbhb = xp.c_[Ats_arr, Ets_arr]
-    
-    noise_samples = xp.random.normal(size=ts_mbhb.shape)
-    print('truths = ', truths)
+     
 
-    return (ts_mbhb + noise_samples), truths
+    noise_samples = xp.random.normal(size=(1,ts_mbhb.shape[1]))
+    return (ts_mbhb + xp.repeat(noise_samples, N, axis=0)), truths
 
 
 

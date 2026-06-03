@@ -66,6 +66,9 @@ class MBHB_gpu(Source):
          self.params_min = []
          self.params_max = []       
 
+         # Default values, probably better to put this in a different place
+         self.params_truths= []
+
          # Have to record mean value and standard deviation
       
     # Sample from the prior of auxillary parameters
@@ -107,7 +110,7 @@ class MBHB_gpu(Source):
             if value == 1 :
                 if key in angles:
                     c_pi = np.pi
-                else: c_pi = 1.      
+                else: c_pi = 1.
                 params[key] = xp.random.uniform(c_pi*float(params_min_all[key]), c_pi*float(params_max_all[key]), N) 
                 # For the first iteration record values for normalisation and labels to be able to restore the values to original range
                 if iteration == 0:
@@ -117,6 +120,7 @@ class MBHB_gpu(Source):
                     #self.params_min.append(c_pi*params_min_all[key])
                     #self.params_max.append(c_pi*params_max_all[key]) 
                     self.params_label.append(key)
+                    self.params_truths.append(params_default[key])
                 # Standerdise parameters
                 self.params_batch[:,i] = (params[key] - self.params_mean[i]) / self.params_std[i]
                 # Normalise
@@ -198,7 +202,7 @@ class MBHB_gpu(Source):
                                       freqs = self.freqs,
                                       modes = modes, direct=False, fill=True, length=1024)#[0] 
 
-        plt.loglog(self.freqs.get(), np.abs(self.mbhb[0,0,:].get()))
+        #plt.loglog(self.freqs.get(), np.abs(self.mbhb[0,0,:].get()))
 
 
     # Create waveform combinations
@@ -214,10 +218,10 @@ class MBHB_gpu(Source):
         noiseE_cp = xp.asarray(noisevals_E)
 
         # Shifting by tc and not tc_var
-        t_shift = xp.asarray(self.params['t_ref']) + 5000.0 + 2.0*self.dt*self.Nfreq #  + 5000.0 # -2.0*self.dt*self.t_resolution
+        #t_shift = xp.asarray(self.params['t_ref']) + 5000.0 + 2.0*self.dt*self.Nfreq #  + 5000.0 # -2.0*self.dt*self.t_resolution
 
         #shift = xp.exp(1j*2.0*np.pi*self.freqs*t_shift) 
-        wf_shift = xp.exp(1j*2.0*np.pi*xp.matmul(t_shift.reshape(-1,1), self.freqs.reshape(1,-1)))
+        #wf_shift = xp.exp(1j*2.0*np.pi*xp.matmul(t_shift.reshape(-1,1), self.freqs.reshape(1,-1)))
 
         # Whitten the waveforms
         Afs_white = self.mbhb[:,0,1:]*xp.sqrt(4.0*self.df)/xp.sqrt(noiseA_cp)
@@ -236,23 +240,7 @@ class MBHB_gpu(Source):
         Ets_arr = xp.fft.irfft(xp.c_[xp.zeros(Efs_white.shape[0]), Efs_white], axis = 1)
 
         # Shift time domain waveform such that the merger is not at the end of the waveform 
-        #ts_mbhb = xp.c_[Ats_arr[:,-10000], Ats_arr[:,:1000], Ets_arr[:,-10000], Ets_arr[:,:1000]]
         ts_mbhb = xp.c_[Ats_arr, Ets_arr]
-
-        #print('ts_mbhb.shape = ', ts_mbhb.shape)
-        #plt.figure()
-        #plt.plot(Ats_arr[0,64500:].get())
-        #plt.plot(Ats_arr[1,64500:].get())
-        #plt.plot(Ats_arr[2,64500:].get())
-        #plt.plot(Ats_arr[3,64500:].get())
-        #plt.savefig('ts_mbhb0A.png')
-        #plt.close()
-
-        #print('ts_mbhb.shape = ', ts_mbhb.shape)
-        #plt.figure()
-        #plt.plot(ts_mbhb[0,:].get())
-        #plt.savefig('ts_mbhb0.png')
-        #plt.close()
 
         return ts_mbhb
 
@@ -273,6 +261,9 @@ class MBHB_gpu(Source):
 
     def get_param_std(self):
         return self.params_std
+
+    def get_param_truth(self):
+        return self.params_truths
 
     def get_freqs(self):
         return self.freqs
