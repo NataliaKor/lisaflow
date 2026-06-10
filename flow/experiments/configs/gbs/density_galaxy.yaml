@@ -1,13 +1,13 @@
 # Config file for fitting the distribution of the Galaxy.
 
-gpu: 1
+gpu: 0
 
 model:                                 # Properties of the model
 
     base:                              # Base distribution
       gaussian: 1                      # Type of the base distribution, can be either gaussian (1) or resampled (0) 
       learn_mean_var: False            # Flag, if true, mean and variance of the distribution is learned
-      params: 3                        # Number of the physical parameters that we want to fit 
+      params: 5                        # Number of the physical parameters that we want to fit 
     
     acceptance_fn:                     # These parameters are only for the case when we use base resampling
       # To be implemented
@@ -35,7 +35,7 @@ model:                                 # Properties of the model
 
 training:
 
-    batch_size: 16384 # 8192 # 16384                  # Batch size
+    batch_size: 2048 #16384 # 8192 # 16384                  # Batch size
     epochs: 500                       # Number of epochs
     max_iter: 500                      # Number of iterations inside one ephoch, useful only when the data is created on the fly 
     learning_rate: 2.e-4               # Initial learning rate.
@@ -45,10 +45,10 @@ training:
     seed: 1                            # Seed for training run
     grad_norm_clip_value: 5. # 0            # Value by which to clip the norm of the gradient 
     resume: 0 # 1                          # Resume training (1) or start from scratch (0).
-    checkpoints: checkpoint_galaxy.pt     # Path to the checkpoint from which we are going to resume the training
+    checkpoints: checkpoint_53.pt     # Path to the checkpoint from which we are going to resume the training
 
 samples:
-    path:  /sps/lisaf/natalia/github/ai_for_lisa/lisaflow/flow/experiments/sangria/galaxy_sky_dist.npy
+    path:  /sps/lisaf/natalia/github/lisaflow/flow/experiments/galaxy/catalogue_dwds_with_weak_interaction_5parameters.npy
 
 saving:
 
