@@ -19,6 +19,8 @@ from torch.utils.data import DataLoader
 from flow.experiments.dataloaders.data_loader_1gb import NPYDataset
 from flow.experiments.galaxy.npy_galaxy_dataset import NPYGalaxyDataset #GalaxyHDF5Dataset
 
+from flow.experiments.density_estimation.glitch.data_loader_glitch import GlitchDataset
+
 import time
 
 
@@ -47,7 +49,6 @@ class RV_base(nn.Module):
         else:
             self.dev = "cpu"
             self.dtype = torch.FloatTensor
-            import numpy as np
             self.xp = np
             #get_wrapper = std_get_wrapper
 
@@ -78,15 +79,16 @@ class RV_base(nn.Module):
             dataset = NPYDataset(filename)
         elif source == 'Galaxy':
             dataset = NPYGalaxyDataset(filename)
+        elif source == 'Glitch':
+            dataset = GlitchDataset(filename)
         else:
             print('No such dataset')
         # Dataloader for training data
-        print('batch_size = ', batch_size)
         loader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=True,
                             num_workers=4,
-                            pin_memory=False)
+                            pin_memory=True)
 
         # Record losses
         losses = []
@@ -137,8 +139,9 @@ class RV_base(nn.Module):
         # Load here the labels of parameters
         param_min = dataset.samples_min
         param_max = dataset.samples_max
-        param_minmax = np.stack([np.array(param_min), np.array(param_max)],axis=1)
-        np.savetxt(self.config['saving']['save_root'] + 'minmax_' + self.config['saving']['label'] + '.txt', param_minmax.squeeze())
+        np.savetxt(self.config['saving']['save_root'] + 'minmax_' + self.config['saving']['label'] + '.txt', (param_min, param_max))
+        #param_minmax = np.stack([np.array(param_min), np.array(param_max)],axis=1)
+        #np.savetxt(self.config['saving']['save_root'] + 'minmax_' + self.config['saving']['label'] + '.txt', param_minmax.squeeze())
         
         for j0 in range(number_epochs):
 

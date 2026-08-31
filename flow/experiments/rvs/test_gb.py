@@ -24,7 +24,7 @@ def main(parser):
     gb = GalacticBinary(args.config)
     
     # Choose if we train the network or load trained weights
-    train == False
+    train = False
     if train: 
         # Train the network 
         gb.fit()
@@ -56,7 +56,8 @@ def main(parser):
 
     # Estimale log probabilities for the samples
     log_prob = gb.log_prob(samples)
- 
+    print('log_prob = ', log_prob)
+
     # Plot samples to verify
     figure = corner.corner(get_wrapper(samples),
              plot_datapoints=False,
