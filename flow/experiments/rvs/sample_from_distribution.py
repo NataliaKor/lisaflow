@@ -13,15 +13,15 @@ from flow.utils.torchutils import *
 from flow.distributions.normal import *
 from flow.networks.mlp import MLP
 
-from flow_architecture_density_small import *
+from flow.experiments.flow_architecture_density_small import *
 
 from torch.utils.data import DataLoader
-from data_loader_galaxy import GalaxyDataset
+from flow.experiments.data_loader_galaxy import GalaxyDataset
 
 def main(parser):
 
     # Parse command line arguments
-    parser.add_argument('--config', type=str, default='configs/gbs/density.yaml',
+    parser.add_argument('--config', type=str, default='../configs/gbs/density.yaml',
                         help='Path to config file specifying model architecture and training procedure')
     parser.add_argument('--resume', type=int, default=1, help='Flag whether to resume training')
 
@@ -40,13 +40,23 @@ def main(parser):
     # Load config
     config = get_config(args.config)
 
+    # Load min and max values to normalise back 
+    filename = config['samples']['path']
+    dataset_gb = GalaxyDataset(filename)
+    param_min = dataset_gb.samples_min
+    param_max = dataset_gb.samples_max 
+
+    np.savetxt('minmax_galaxy_sangria.txt', (param_min, param_max))
+ 
+    exit()
+
     # Size of the physical parameters
     # num_coeff = feature_size
     features_size = config['model']['base']['params']
 
     # Define base distribution. At the moment there are 2 options: 
-    if config['model']['base']['distribution'] == 1:
-        distribution = StandardNormal((features_size,)).to(dev)
+    #if config['model']['base']['distribution'] == 1:
+    distribution = StandardNormal((features_size,)).to(dev)
   
     transform = create_transform(config).to(dev)
     flow = Flow(transform, distribution).to(dev)
@@ -61,6 +71,9 @@ def main(parser):
     param_min = dataset_gb.samples_min
     param_max = dataset_gb.samples_max 
 
+    np.savetxt('minmax_galaxy_sangria.txt', (param_min, param_max))
+    
+   
     flow.eval()
     with torch.no_grad():
 
